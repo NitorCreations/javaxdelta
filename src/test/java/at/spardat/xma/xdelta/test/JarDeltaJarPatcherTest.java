@@ -25,16 +25,23 @@ package at.spardat.xma.xdelta.test;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.awt.PageAttributes.OriginType;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -63,7 +70,6 @@ public class JarDeltaJarPatcherTest {
     private File patchFile; //die Unterschiede
 
     private File resultFile; //das erechnete Result
-
 
 
     public JarDeltaJarPatcherTest() {
@@ -122,25 +128,25 @@ public class JarDeltaJarPatcherTest {
      */
     private ZipFile makeSourceZipFile(File source) throws Exception {
 
-        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(source));
+        ZipArchiveOutputStream out = new ZipArchiveOutputStream(new FileOutputStream(source));
         int size = randomSize(entryMaxSize);
         for (int i = 0; i < size; i++) {
-            out.putNextEntry(new ZipEntry("zipentry" + i));
+            out.putArchiveEntry(new ZipArchiveEntry("zipentry" + i));
             int anz = randomSize(10);
             for (int j = 0; j < anz; j++) {
                 byte[] bytes = getRandomBytes();
                 out.write(bytes, 0, bytes.length);
             }
-
-            out.closeEntry();
+            out.flush();
+            out.closeArchiveEntry();
         }
-
         //add leeres Entry
-        out.putNextEntry(new ZipEntry("zipentry" + size));
-        out.closeEntry();
-
+        out.putArchiveEntry(new ZipArchiveEntry("zipentry" + size));
+        out.flush();
+        out.closeArchiveEntry();
+        out.flush();
+        out.finish();
         out.close();
-
         return new ZipFile(source);
     }
 
@@ -150,28 +156,30 @@ public class JarDeltaJarPatcherTest {
      */
     private ZipFile makeTargetZipFile(ZipFile zipSource, File target) throws Exception {
 
-        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(target));
+        ZipArchiveOutputStream out = new ZipArchiveOutputStream(new FileOutputStream(target));
 
-        for (Enumeration enumer = zipSource.entries(); enumer.hasMoreElements();) {
-            ZipEntry sourceEntry = (ZipEntry) enumer.nextElement();
-            out.putNextEntry(new ZipEntry(sourceEntry.getName()));
+        for (Enumeration enumer = zipSource.getEntries(); enumer.hasMoreElements();) {
+            ZipArchiveEntry sourceEntry = (ZipArchiveEntry) enumer.nextElement();
+            out.putArchiveEntry(new ZipArchiveEntry(sourceEntry.getName()));
 
             byte[] oldBytes = toBytes(zipSource, sourceEntry);
             byte[] newBytes = getRandomBytes();
             byte[] mixedBytes = mixBytes(oldBytes, newBytes);
             out.write(mixedBytes, 0, mixedBytes.length);
-            out.closeEntry();
+            out.flush();
+            out.closeArchiveEntry();
         }
 
-        //zusätzlichen Entry schreiben
-        out.putNextEntry(new ZipEntry("zipentry" + entryMaxSize+1));
+        out.putArchiveEntry(new ZipArchiveEntry("zipentry" + entryMaxSize+1));
         byte[] bytes = getRandomBytes();
         out.write(bytes, 0, bytes.length);
+        out.flush();
+        out.closeArchiveEntry();
 
-//      zusätzlichen leeres Entry schreiben
-        out.putNextEntry(new ZipEntry("zipentry" + (entryMaxSize+2)));
-        out.closeEntry();
-
+        out.putArchiveEntry(new ZipArchiveEntry("zipentry" + (entryMaxSize+2)));
+        out.closeArchiveEntry();
+        out.flush();
+        out.finish();
         out.close();
 
         return new ZipFile(targetFile);
@@ -213,7 +221,7 @@ public class JarDeltaJarPatcherTest {
      * Converts the given zip entry to a byte array.
      * @author S3460
      */
-    private byte[] toBytes(ZipFile zipfile, ZipEntry entry) throws Exception {
+    private byte[] toBytes(ZipFile zipfile, ZipArchiveEntry entry) throws Exception {
         int entrySize = (int) entry.getSize();
         byte[] bytes = new byte[entrySize];
         InputStream entryStream = zipfile.getInputStream(entry);
@@ -253,16 +261,16 @@ public class JarDeltaJarPatcherTest {
         boolean rc = false;
 
         try {
-            for (Enumeration enumer = zipSource.entries(); enumer.hasMoreElements();) {
-                ZipEntry sourceEntry = (ZipEntry) enumer.nextElement();
-                ZipEntry resultEntry = resultZip.getEntry(sourceEntry.getName());
+            for (Enumeration enumer = zipSource.getEntries(); enumer.hasMoreElements();) {
+                ZipArchiveEntry sourceEntry = (ZipArchiveEntry) enumer.nextElement();
+                ZipArchiveEntry resultEntry = resultZip.getEntry(sourceEntry.getName());
                 assertNotNull("Entry nicht generiert: " + sourceEntry.getName(),
                         resultEntry);
     
                 byte[] oldBytes = toBytes(zipSource, sourceEntry);
                 byte[] newBytes = toBytes(resultZip, resultEntry);
     
-                rc = new JarDelta().equal(oldBytes, newBytes);
+                rc = equal(oldBytes, newBytes);
                 assertTrue("bytes the same " + sourceEntry, rc);
             }
         } finally {
@@ -270,34 +278,54 @@ public class JarDeltaJarPatcherTest {
             resultZip.close();
         }
     }
+    public boolean equal(byte[] source,byte[]target) {
+    	if(source.length!=target.length) return false;
+    	for(int i=0;i<source.length;i++) {
+    		if(source[i]!=target[i]) return false;
+    	}
+    	return true;
+    }
 
     /**
      * Uses JarDelta to create a patch file and tests if JarPatcher correctly reconstructs
      * newZip using this patch file.
      * @author S3460
      */
-    private void runJarPatcher(ZipFile orginalZip, ZipFile newZip) throws Exception {
-
-        new JarDelta().computeDelta(orginalZip, newZip, new ZipOutputStream(new FileOutputStream(
-                patchFile)));
-
-        new JarPatcher().applyDelta(new ZipFile(sourceFile), new ZipFile(patchFile),
-                new ZipOutputStream(new FileOutputStream(resultFile)));
-
-        compareFiles(new ZipFile(targetFile), new ZipFile(resultFile));
+    private void runJarPatcher(String originalName, String targetName, ZipFile originalZip, ZipFile newZip) throws Exception {
+    	runJarPatcher(originalName, targetName, originalZip, newZip, true);
+    }
+    private void runJarPatcher(String originalName, String targetName, ZipFile originalZip, ZipFile newZip, boolean comparefiles) throws Exception {
+        try (ZipArchiveOutputStream output = new ZipArchiveOutputStream(new FileOutputStream(patchFile))) {
+        	new JarDelta().computeDelta(originalName, targetName, originalZip, newZip, output);
+        }      
+		ZipFile patch = new ZipFile(patchFile);
+		ZipArchiveEntry listEntry = patch.getEntry("META-INF/file.list");
+		if(listEntry==null) {
+			patch.close();
+			throw new IOException("Invalid patch - list entry 'META-INF/file.list' not found");
+		}
+		BufferedReader patchlist = new BufferedReader(new InputStreamReader(patch.getInputStream(listEntry)));
+		String next = patchlist.readLine();
+		String sourceName = next;
+		next = patchlist.readLine();
+        new JarPatcher(patchFile.getName(), sourceName).applyDelta(patch, new ZipFile(originalName),
+               new ZipArchiveOutputStream(new FileOutputStream(resultFile)), patchlist);
+        if (comparefiles) {
+        	compareFiles(new ZipFile(targetName), new ZipFile(resultFile));
+        }
     }
 
     private void runJarPatcherDerivedFile() throws Exception {
         ZipFile orginalZip = makeSourceZipFile(sourceFile);
         ZipFile derivedZip = makeTargetZipFile(orginalZip, targetFile);
 
-        runJarPatcher(orginalZip, derivedZip);
+        runJarPatcher(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), orginalZip, derivedZip);
     }
 
     private void runJarPatcherCompleteDifferntFile() throws Exception {
         ZipFile orginalZip = makeSourceZipFile(sourceFile);
         ZipFile derivedZip = makeSourceZipFile(targetFile);
-        runJarPatcher(orginalZip, derivedZip);
+        runJarPatcher(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), orginalZip, derivedZip);
     }
 
     @Test
@@ -342,7 +370,15 @@ public class JarDeltaJarPatcherTest {
         entryMaxSize = 100;
         runJarPatcherCompleteDifferntFile();
     }
-
+    
+    // Throws exception from patching if target and output crc:s don't match except for zip files, 
+    // which may get different crc's due to different compression options
+    @Test
+    public void testEmbeddedZip() throws Exception {
+    	String file1 = "src/test/resources/embedded1.zip";
+    	String file2 = "src/test/resources/embedded2.zip";
+    	runJarPatcher(file1, file2, new ZipFile(file1), new ZipFile(file2), false);
+    }
     @Ignore
     public void noTestJarPatcherCompleteDifferntStressed() throws Exception {
         byteMaxLength = 100000;
@@ -357,13 +393,21 @@ public class JarDeltaJarPatcherTest {
     @Test
     public void testJarPatcherIdentFile() throws Exception {
 
-        ZipFile orginalZip = makeSourceZipFile(sourceFile);
-
-        new JarDelta().computeDelta(orginalZip, orginalZip, new ZipOutputStream(new FileOutputStream(
+        ZipFile originalZip = makeSourceZipFile(sourceFile);
+        new JarDelta().computeDelta(sourceFile.getAbsolutePath(), sourceFile.getAbsolutePath(), originalZip, originalZip, new ZipArchiveOutputStream(new FileOutputStream(
                 patchFile)));
-        new JarPatcher().applyDelta(new ZipFile(sourceFile), new ZipFile(patchFile),
-                new ZipOutputStream(new FileOutputStream(resultFile)));
-
+		ZipFile patch = new ZipFile(patchFile);
+		ZipArchiveEntry listEntry = patch.getEntry("META-INF/file.list");
+		if(listEntry==null) {
+			throw new IOException("Invalid patch - list entry 'META-INF/file.list' not found");
+		}
+		BufferedReader patchlist = new BufferedReader(new InputStreamReader(patch.getInputStream(listEntry)));
+		String next = patchlist.readLine();
+		String sourceName = next;
+		next = patchlist.readLine();
+        ZipFile source = new ZipFile(sourceFile);
+        new JarPatcher(patchFile.getName(), sourceName).applyDelta(patch, source,
+                new ZipArchiveOutputStream(new FileOutputStream(resultFile)), patchlist);
         compareFiles(new ZipFile(sourceFile), new ZipFile(resultFile));
     }
 

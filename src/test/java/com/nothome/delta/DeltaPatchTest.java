@@ -158,7 +158,6 @@ public class DeltaPatchTest {
         Delta d = new Delta();
         d.setChunkSize(chunkSize);
         d.compute(test1File, test2File, output);
-        output.close();
 
         assertTrue(delta.exists());
 

@@ -113,7 +113,6 @@ public class DeltaDiffPatchBoundariesTest {
                     new BufferedOutputStream(new FileOutputStream(deltaFile))));
             Delta d = new Delta();
             d.compute(test1File, test2File, output);
-            output.close();
 
             assertTrue(deltaFile.exists());
 

@@ -33,7 +33,7 @@ import java.io.OutputStream;
  * Outputs a diff following the GDIFF file specification available at
  * http://www.w3.org/TR/NOTE-gdiff-19970901.html.
  */
-public class GDiffWriter implements DiffWriter {
+public class GDiffWriter implements DiffWriter, AutoCloseable {
     
     /**
      * Max length of a chunk.
@@ -165,9 +165,10 @@ public class GDiffWriter implements DiffWriter {
      * Writes the final EOF byte, closes the underlying stream.
      */
     public void close() throws IOException {
-        this.flush();
-        output.write((byte)EOF);
-        output.close();
+        try (OutputStream os = output) {
+        	this.flush();
+        	output.write((byte)EOF);
+        }
     }
 
 }

@@ -1,16 +1,20 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.nothome</groupId>
+  <groupId>com.nitorcreations</groupId>
   <artifactId>javaxdelta</artifactId>
-  <version>2.0.1</version>
+  <version>1.0-SNAPSHOT</version>
   <name>javaxdelta</name>
-
+  <prerequisites>
+    <maven>3.2.0</maven>
+  </prerequisites>
   <!-- Project meta-data -->
   <description>javaxdelta - Patch generator and patch tool using the GDIFF algorithm</description>
   <licenses>
     <license>
-      <name>MIT license</name>
-      <url>http://en.wikipedia.org/wiki/MIT_License</url>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
     </license>
   </licenses>
   <inceptionYear>2003</inceptionYear>
@@ -23,12 +27,19 @@
       <name>Torgeir</name>
       <email>torgeir@pobox.com</email>
     </developer>
+    <developer>
+      <id>psiniemi</id>
+      <name>Pasi Niemi</name>
+      <email>pasi.niemi@iki.fi</email>
+      <url>http://www.linkedin.com/in/psiniemi</url>
+    </developer>
   </developers>
-  <url>http://sourceforge.net/projects/xdelta</url>
+  <url>https://github.com/NitorCreations/javaxdelta</url>
   <scm>
-    <url>http://javaxdelta.svn.sourceforge.net/viewvc/javaxdelta/tags/javaxdelta-2.0.1</url>
-    <connection>scm:svn:https://javaxdelta.svn.sourceforge.net/svnroot/javaxdelta/tags/javaxdelta-2.0.1</connection>
-    <developerConnection>scm:svn:https://javaxdelta.svn.sourceforge.net/svnroot/javaxdelta/tags/javaxdelta-2.0.1</developerConnection>
+    <developerConnection>scm:git:git@github.com:NitorCreations/javaxdelta.git</developerConnection>
+    <connection>scm:git:git@github.com:NitorCreations/javaxdelta.git</connection>
+    <url>https://github.com/NitorCreations/javaxdelta</url>
+    <tag>HEAD</tag>
   </scm>
   <mailingLists>
     <mailingList>
@@ -41,101 +52,173 @@
   </issueManagement>
 
   <build>
-    <extensions>
-      <extension>
-        <groupId>org.apache.maven.wagon</groupId>
-        <artifactId>wagon-ssh-external</artifactId>
-        <version>1.0-beta-2</version>
-      </extension>
-    </extensions>
     <plugins>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.2-beta-2</version>
         <configuration>
           <descriptorRefs>
-            <descriptorRef>bin</descriptorRef>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
         </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-scm-plugin</artifactId>
-        <version>1.0-rc1</version>
-        <configuration>
-          <descriptorRefs>
-            <descriptorRef>bin</descriptorRef>
-          </descriptorRefs>
-        </configuration>
+        <executions>
+          <execution>
+            <phase>process-test-classes</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.2</version>
         <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <configuration />
+        <version>2.18.1</version>
       </plugin>
       <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.2</version>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.3</version>
+        <extensions>true</extensions>
         <configuration>
-          <archive>
-            <manifest>
-              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.3</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <links>
-            <link>http://java.sun.com/j2se/1.5.0/docs/api/</link>
-          </links>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
         </configuration>
       </plugin>
     </plugins>
   </build>
 
-  <!--  DEPENDENCIES -->
+  <!-- DEPENDENCIES -->
 
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.5</version>
-      <scope>test</scope>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.9</version>
     </dependency>
     <dependency>
-      <groupId>trove</groupId>
-      <artifactId>trove</artifactId>
-      <version>2.1.1</version>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
-  <repositories>
-    <repository>
-      <id>javaxdelta.sourceforge.net</id>
-      <url>http://javaxdelta.sourceforge.net/maven2/repository</url>
-    </repository>
-  </repositories>
   <distributionManagement>
-    <repository>
-      <id>javaxdelta.sourceforge.net</id>
-	  <url>sftp://web.sourceforge.net/home/groups/j/ja/javaxdelta/htdocs/maven2/repository</url>
-    </repository>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
   </distributionManagement>
 
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.5</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.4</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.10.1</version>
+            <executions>
+              <execution>
+                <id>jar</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <failOnError>false</failOnError>
+                  <quiet>true</quiet>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>create-script</id>
+      <activation>
+        <os>
+          <family>unix</family>
+        </os>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.3.2</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <executable>src/main/shell/create-script.sh</executable>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>1.9.1</version>
+            <executions>
+              <execution>
+                <id>attach-artifacts</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>attach-artifact</goal>
+                </goals>
+                <configuration>
+                  <artifacts>
+                    <artifact>
+                      <file>${project.build.directory}/jarxdelta.sh</file>
+                      <type>sh</type>
+                    </artifact>
+                  </artifacts>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

@@ -22,23 +22,28 @@
  */
 package at.spardat.xma.xdelta;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
+import java.util.regex.Pattern;
+import java.util.zip.ZipException;
+
+import org.apache.commons.compress.archivers.zip.ExtraFieldUtils;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 import com.nothome.delta.Delta;
 import com.nothome.delta.DiffWriter;
 import com.nothome.delta.GDiffWriter;
-
-
 /**
  * This class calculates the binary difference of two zip files by applying {@link com.nothome.delta.Delta}
  * to all files contained in both zip files. All these binary differences are stored in the output zip file.
@@ -49,8 +54,11 @@ import com.nothome.delta.GDiffWriter;
  * @author gruber
  */
 public class JarDelta {
-
-    /**
+	private static final Pattern zipFilesPattern = Pattern.compile(".*?\\.zip$|.*?\\.jar$|.*?\\.war$|.*?\\.ear$", Pattern.CASE_INSENSITIVE);
+	private static final int BUFFER_LEN = 8 * 1024;
+    private final byte[] buffer = new byte[BUFFER_LEN];
+    private byte[] calculatedDelta = null;
+	/**
      * Computes the binary differences of two zip files. For all files contained in source and target which
      * are not equal, the binary difference is caluclated by using
      * {@link com.nothome.delta.Delta#computeDelta(com.nothome.delta.SeekableSource, InputStream, int, DiffWriter)}.
@@ -64,79 +72,156 @@ public class JarDelta {
      * @param output the zip file where the patches have to be written to
      * @throws IOException if an error occures reading or writing any entry in a zip file
      */
-	public void computeDelta(ZipFile source, ZipFile target, ZipOutputStream output) throws IOException {
-        try {
+	public void computeDelta(String sourceName, String targetName, ZipFile source, ZipFile target, ZipArchiveOutputStream output) throws IOException {
             ByteArrayOutputStream listBytes = new ByteArrayOutputStream();
             PrintWriter list = new PrintWriter(new OutputStreamWriter(listBytes));
-    		for(Enumeration enumer=target.entries();enumer.hasMoreElements();) {
-    			ZipEntry targetEntry = (ZipEntry)enumer.nextElement();
-                ZipEntry sourceEntry = source.getEntry(targetEntry.getName());
-                list.println(targetEntry.getName());
+            list.println(sourceName);
+            list.println(targetName);
+        	computeDelta(source, target, output, list, "");
+        	list.close();
+        	ZipArchiveEntry listEntry = new ZipArchiveEntry("META-INF/file.list");
+        	output.putArchiveEntry(listEntry);
+        	output.write(listBytes.toByteArray());
+        	output.closeArchiveEntry();
+        	output.finish();
+        	output.flush();
+    }
 
+	public void computeDelta(ZipFile source, ZipFile target, ZipArchiveOutputStream output, PrintWriter list, String prefix) throws IOException {
+        try {
+    		for(Enumeration<ZipArchiveEntry> enumer=target.getEntries();enumer.hasMoreElements();) {
+    			calculatedDelta = null;
+    			ZipArchiveEntry targetEntry = enumer.nextElement();
+                ZipArchiveEntry sourceEntry = findBestSource(source, target, targetEntry);
+                String nextEntryName = prefix + targetEntry.getName(); 
+            	if (sourceEntry != null && targetEntry != null && zipFilesPattern.matcher(sourceEntry.getName()).matches() && !equal(sourceEntry, targetEntry)) {
+            		nextEntryName += "!";
+            	}
+            	nextEntryName += "|" + targetEntry.getCrc();
+            	if (sourceEntry != null) {
+                	nextEntryName += ":" + sourceEntry.getCrc();
+            	} else {
+            		nextEntryName += ":0"; 
+            	}
+        		list.println(nextEntryName);
                 if(targetEntry.isDirectory()) {
                     if(sourceEntry==null) {
-                        ZipEntry outputEntry = new ZipEntry(targetEntry);
-                        output.putNextEntry(outputEntry);
+                        ZipArchiveEntry outputEntry = entryToNewName(targetEntry, prefix + targetEntry.getName());
+                        output.putArchiveEntry(outputEntry);
+                        output.closeArchiveEntry();
                     }
-                    continue;
+                } else {
+                	if(sourceEntry==null
+                			|| sourceEntry.getSize() <= Delta.DEFAULT_CHUNK_SIZE
+                			|| targetEntry.getSize() <= Delta.DEFAULT_CHUNK_SIZE) {  // new Entry od. alter Eintrag od. neuer Eintrag leer
+                		ZipArchiveEntry outputEntry = entryToNewName(targetEntry, prefix + targetEntry.getName());
+                		output.putArchiveEntry(outputEntry);
+                		try (InputStream in = target.getInputStream(targetEntry)) {
+                			int read = 0;
+                			while (-1 < (read = in.read(buffer))) {
+                				output.write(buffer, 0, read);
+                			}
+                			output.flush();
+                		}
+                		output.closeArchiveEntry();
+                	} else {
+                		if(!equal(sourceEntry,targetEntry)) {
+                			if (zipFilesPattern.matcher(sourceEntry.getName()).matches()) {
+                				File embeddedSource = File.createTempFile("jardelta-tmp", ".zip");
+                				try (FileOutputStream out = new FileOutputStream(embeddedSource); 
+                						InputStream in = source.getInputStream(sourceEntry)) {
+                					int read = 0;
+                					while (-1 < (read = in.read(buffer))) {
+                						out.write(buffer, 0, read);
+                					}
+                					out.flush();
+                				}
+                				File embeddedTarget = File.createTempFile("jardelta-tmp", ".zip");
+                				try (FileOutputStream out = new FileOutputStream(embeddedTarget); 
+                						InputStream in = target.getInputStream(targetEntry)) {
+                					int read = 0;
+                					while (-1 < (read = in.read(buffer))) {
+                						out.write(buffer, 0, read);
+                					}
+                					out.flush();
+                				}
+                				computeDelta(new ZipFile(embeddedSource), new ZipFile(embeddedTarget), output, list, prefix + sourceEntry.getName() + "!");
+                				embeddedSource.delete();
+                				embeddedTarget.delete();
+                			} else {
+                				ZipArchiveEntry outputEntry = new ZipArchiveEntry(prefix + targetEntry.getName()+".gdiff");
+                				outputEntry.setTime(targetEntry.getTime());
+                				outputEntry.setComment("" + targetEntry.getCrc());
+                				output.putArchiveEntry(outputEntry);
+                				if (calculatedDelta != null) {
+                					output.write(calculatedDelta);
+                					output.flush();
+                				} else {
+                					try (ByteArrayOutputStream outbytes = new ByteArrayOutputStream()) {
+                						Delta d = new Delta();
+                						DiffWriter diffWriter = new GDiffWriter(new DataOutputStream(outbytes));
+                						int sourceSize = (int)sourceEntry.getSize();
+                						byte[] sourceBytes = new byte[sourceSize];
+                						try (InputStream sourceStream = source.getInputStream(sourceEntry)) {
+                							for(int erg=sourceStream.read(sourceBytes);erg<sourceBytes.length;erg+=sourceStream.read(sourceBytes,erg,sourceBytes.length-erg));
+                						}
+                						d.compute(sourceBytes,target.getInputStream(targetEntry),diffWriter);
+                						output.write(outbytes.toByteArray());
+                					}
+                				}
+                				output.closeArchiveEntry();
+                			}
+                		}
+                	}
                 }
-
-    			int targetSize = (int)targetEntry.getSize();
-    			byte[] targetBytes = new byte[targetSize];
-    			InputStream targetStream = target.getInputStream(targetEntry);
-    			for(int erg=targetStream.read(targetBytes);erg<targetBytes.length;erg+=targetStream.read(targetBytes,erg,targetBytes.length-erg));
-                targetStream.close();
-                int chunk = Delta.DEFAULT_CHUNK_SIZE;
-    			if(sourceEntry==null
-                        || sourceEntry.getSize() <= chunk
-                        || targetEntry.getSize() <= chunk) {  // new Entry od. alter Eintrag od. neuer Eintrag leer
-    				ZipEntry outputEntry = new ZipEntry(targetEntry);
-    				output.putNextEntry(outputEntry);
-    				output.write(targetBytes);
-    			} else {
-    				int sourceSize = (int)sourceEntry.getSize();
-    				byte[] sourceBytes = new byte[sourceSize];
-    				InputStream sourceStream = source.getInputStream(sourceEntry);
-    				for(int erg=sourceStream.read(sourceBytes);erg<sourceBytes.length;erg+=sourceStream.read(sourceBytes,erg,sourceBytes.length-erg));
-    				sourceStream.close();
-                    if(!equal(sourceBytes,targetBytes)) {
-        				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                        DiffWriter diffWriter = new GDiffWriter(new DataOutputStream(outputStream));
-        				Delta d = new Delta();
-        				d.compute(sourceBytes,target.getInputStream(targetEntry),diffWriter);
-                        diffWriter.close();
-
-        				ZipEntry outputEntry = new ZipEntry(targetEntry.getName()+".gdiff");
-                        outputEntry.setTime(targetEntry.getTime());
-        				output.putNextEntry(outputEntry);
-        				output.write(outputStream.toByteArray());
-                    }
-    			}
     		}
-            list.close();
-            ZipEntry listEntry = new ZipEntry("META-INF/file.list");
-            output.putNextEntry(listEntry);
-            output.write(listBytes.toByteArray());
         } finally {
             source.close();
             target.close();
-            output.close();
         }
 	}
-
+	
     /**
      * Test if the content of two byte arrays is completly identical.
      * @return true if source and target contain the same bytes.
+     * @throws IOException 
+     * @throws ZipException 
      */
-	public boolean equal(byte[] source,byte[]target) {
-	    if(source.length!=target.length) return false;
-        for(int i=0;i<source.length;i++) {
-            if(source[i]!=target[i]) return false;
-        }
-        return true;
+	public boolean equal(ZipArchiveEntry sourceEntry, ZipArchiveEntry targetEntry) {
+        return (sourceEntry.getSize() == targetEntry.getSize()) &&
+        		(sourceEntry.getCrc() == targetEntry.getCrc());
     }
-
-    /**
+	
+	public ZipArchiveEntry findBestSource(ZipFile source, ZipFile target, ZipArchiveEntry targetEntry) throws IOException {
+		ArrayList<ZipArchiveEntry> ret = new ArrayList<>();
+		for (ZipArchiveEntry next : source.getEntries(targetEntry.getName())) {
+			if (next.getCrc() == targetEntry.getCrc()) return next;
+			ret.add(next);
+		}
+		if (ret.size() == 0) return null;
+		if (ret.size() == 1 || targetEntry.isDirectory()) return ret.get(0);
+		//More than one and no matching crc --- need to calculate xdeltas and pick the  shortest
+		ZipArchiveEntry retEntry = null;
+		for (ZipArchiveEntry sourceEntry : ret) {
+			try (ByteArrayOutputStream outbytes = new ByteArrayOutputStream()) {
+				Delta d = new Delta();
+				DiffWriter diffWriter = new GDiffWriter(new DataOutputStream(outbytes));
+				int sourceSize = (int)sourceEntry.getSize();
+				byte[] sourceBytes = new byte[sourceSize];
+				try (InputStream sourceStream = source.getInputStream(sourceEntry)) {
+					for(int erg=sourceStream.read(sourceBytes);erg<sourceBytes.length;erg+=sourceStream.read(sourceBytes,erg,sourceBytes.length-erg));
+				}
+				d.compute(sourceBytes, target.getInputStream(targetEntry), diffWriter);
+				byte[] nextDiff = outbytes.toByteArray();
+				if (calculatedDelta == null || calculatedDelta.length > nextDiff.length) {
+					retEntry = sourceEntry;
+					calculatedDelta = nextDiff;
+				}
+			}
+		}
+		return retEntry;
+	}
+	/**
      * Main method to make {@link #computeDelta(ZipFile, ZipFile, ZipOutputStream)} available at
      * the command line.<br>
      * usage JarDelta source target output
@@ -146,6 +231,29 @@ public class JarDelta {
 			System.err.println("usage JarDelta source target output");
 			return;
 		}
-		new JarDelta().computeDelta(new ZipFile(args[0]),new ZipFile(args[1]),new ZipOutputStream(new FileOutputStream(args[2])));
+        try (ZipArchiveOutputStream output = new ZipArchiveOutputStream(new FileOutputStream(args[2]))) {
+        	new JarDelta().computeDelta(args[0], args[1], new ZipFile(args[0]), new ZipFile(args[1]), output);
+        }
+	}
+	private ZipArchiveEntry entryToNewName(ZipArchiveEntry source, String name) throws ZipException {
+		if (source.getName().equals(name)) return new ZipArchiveEntry(source);
+		ZipArchiveEntry ret = new ZipArchiveEntry(name);
+        byte[] extra = source.getExtra();
+        if (extra != null) {
+            ret.setExtraFields(ExtraFieldUtils.parse(extra, true,
+                                                 ExtraFieldUtils
+                                                 .UnparseableExtraField.READ));
+        } else {
+            ret.setExtra(ExtraFieldUtils.mergeLocalFileDataData(source.getExtraFields(true)));
+        }
+        ret.setInternalAttributes(source.getInternalAttributes());
+        ret.setExternalAttributes(source.getExternalAttributes());
+        ret.setExtraFields(source.getExtraFields(true));
+        ret.setCrc(source.getCrc());
+        ret.setMethod(source.getMethod());
+        ret.setSize(source.getSize());
+        return ret;
+
+		
 	}
 }
