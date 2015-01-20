@@ -109,7 +109,8 @@ public class GDiffTextWriter implements DiffTextWriter {
         return Integer.toHexString(i);
     }
 
-    public void addCopy(int offset, int length) throws IOException {
+    @Override
+	public void addCopy(int offset, int length) throws IOException {
         writeBuf();
         w.write(COPY);
         w.write(d(offset));
@@ -118,7 +119,8 @@ public class GDiffTextWriter implements DiffTextWriter {
         w.write(LF);
     }
 
-    public void addData(char c) throws IOException {
+    @Override
+	public void addData(char c) throws IOException {
         caw.append(c);
         if (caw.size() > CHUNK_SIZE)
             flush();
@@ -135,12 +137,14 @@ public class GDiffTextWriter implements DiffTextWriter {
         w.write(LF);
     }
 
-    public void flush() throws IOException {
+    @Override
+	public void flush() throws IOException {
         writeBuf();
         w.flush();
     }
 
-    public void close() throws IOException {
+    @Override
+	public void close() throws IOException {
         flush();
         w.close();
     }

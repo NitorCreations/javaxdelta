@@ -1,6 +1,7 @@
 package com.nothome.delta;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.security.NoSuchAlgorithmException;

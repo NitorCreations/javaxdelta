@@ -32,8 +32,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -252,7 +251,10 @@ public class JarPatcher {
 		outputPath = outputPath.subpath(ignoreOutputPaths, outputPath.getNameCount());
 		File sourceFile = sourcePath.toFile();
 		File outputFile = outputPath.toFile();
-		if (!(outputFile.getParentFile().mkdirs() || outputFile.getParentFile().exists())) throw new IOException("Failed to create " + outputFile.getAbsolutePath());
+		if (!(outputFile.getParentFile().mkdirs() || outputFile.getParentFile().exists())) {
+			patch.close();
+			throw new IOException("Failed to create " + outputFile.getAbsolutePath());
+		}
 		new JarPatcher(patchName, sourceFile.getName()).applyDelta(patch, new ZipFile(sourceFile),new ZipArchiveOutputStream(new FileOutputStream(outputFile)), list);
 		list.close();
 	}

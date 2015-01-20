@@ -426,6 +426,7 @@ public class Delta {
                     "source or target is too large, max length is "
                     + Integer.MAX_VALUE);
             System.err.println("aborting..");
+            if (output != null) output.close();
             return;
         }
 

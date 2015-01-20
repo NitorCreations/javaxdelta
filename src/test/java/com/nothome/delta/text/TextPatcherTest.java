@@ -23,6 +23,7 @@ public class TextPatcherTest {
         w.addCopy(6, 1);
         w.addData('!');
         w.flush();
+        w.close();
         TextPatcher patcher = new TextPatcher(s);
         String patch = patcher.patch(sw.toString());
         assertEquals("cdxyzzg!", patch);

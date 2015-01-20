@@ -334,7 +334,7 @@ public class Delta {
             bb.mark();
             StringBuilder sb = new StringBuilder();
             while (bb.hasRemaining())
-                sb.append((char)bb.get());
+                sb.append(bb.get());
             bb.reset();
             return sb.toString();
         }

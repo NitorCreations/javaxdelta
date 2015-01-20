@@ -48,7 +48,8 @@ public class RandomAccessFileSeekableSource implements SeekableSource {
         this.raf = raf;
     }
 
-    public void seek(long pos) throws IOException {
+    @Override
+	public void seek(long pos) throws IOException {
         raf.seek(pos);
     }
 
@@ -60,11 +61,13 @@ public class RandomAccessFileSeekableSource implements SeekableSource {
         return raf.length();
     }
 
-    public void close() throws IOException {
+    @Override
+	public void close() throws IOException {
         raf.close();
     }
 
-    public int read(ByteBuffer bb) throws IOException {
+    @Override
+	public int read(ByteBuffer bb) throws IOException {
         int c = raf.read(bb.array(), bb.position(), bb.remaining());
         if (c == -1)
             return -1;

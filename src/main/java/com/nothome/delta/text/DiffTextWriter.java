@@ -52,6 +52,7 @@ public interface DiffTextWriter extends Closeable {
     /**
      * Frees internal resources; closes output stream.
      */
-    void close() throws IOException;
+    @Override
+	void close() throws IOException;
 }
 

@@ -57,7 +57,8 @@ public class CharBufferSeekableSource implements SeekableSource {
         this(CharBuffer.wrap(seq));
     }
 
-    public void seek(long pos) throws IOException {
+    @Override
+	public void seek(long pos) throws IOException {
         cb.rewind();
         cur = cb.slice();
         if (pos > cur.limit())
@@ -65,10 +66,12 @@ public class CharBufferSeekableSource implements SeekableSource {
         cur.position((int) pos);
     }
 
-    public int read(CharBuffer charbuffer) throws IOException {
+    @Override
+	public int read(CharBuffer charbuffer) throws IOException {
         return cur.read(charbuffer);
     }
 
-    public void close() throws IOException {
+    @Override
+	public void close() throws IOException {
     }
 }

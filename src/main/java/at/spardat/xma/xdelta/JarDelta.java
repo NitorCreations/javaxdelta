@@ -22,7 +22,6 @@
  */
 package at.spardat.xma.xdelta;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -35,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 import java.util.zip.ZipException;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.compress.archivers.zip.ExtraFieldUtils;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -61,16 +61,18 @@ public class JarDelta {
 	/**
      * Computes the binary differences of two zip files. For all files contained in source and target which
      * are not equal, the binary difference is caluclated by using
-     * {@link com.nothome.delta.Delta#computeDelta(com.nothome.delta.SeekableSource, InputStream, int, DiffWriter)}.
+     * {@link com.nothome.delta.Delta#compute(byte[], InputStream, DiffWriter)}.
      * If the files are equal, nothing is written to the output for them.
      * Files contained only in target and files to small for {@link com.nothome.delta.Delta} are copied to output.
      * Files contained only in source are ignored.
      * At last a list of all files contained in target is written to <code>META-INF/file.list</code> in output.
      *
+     * @param sourceName the original zip file
+     * @param targetName a modification of the original zip file
      * @param source the original zip file
      * @param target a modification of the original zip file
      * @param output the zip file where the patches have to be written to
-     * @throws IOException if an error occures reading or writing any entry in a zip file
+     * @throws IOException if an error occurs reading or writing any entry in a zip file
      */
 	public void computeDelta(String sourceName, String targetName, ZipFile source, ZipFile target, ZipArchiveOutputStream output) throws IOException {
             ByteArrayOutputStream listBytes = new ByteArrayOutputStream();

@@ -25,16 +25,12 @@ package at.spardat.xma.xdelta.test;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.awt.PageAttributes.OriginType;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Enumeration;
@@ -158,7 +154,7 @@ public class JarDeltaJarPatcherTest {
 
         ZipArchiveOutputStream out = new ZipArchiveOutputStream(new FileOutputStream(target));
 
-        for (Enumeration enumer = zipSource.getEntries(); enumer.hasMoreElements();) {
+        for (Enumeration<ZipArchiveEntry> enumer = zipSource.getEntries(); enumer.hasMoreElements();) {
             ZipArchiveEntry sourceEntry = (ZipArchiveEntry) enumer.nextElement();
             out.putArchiveEntry(new ZipArchiveEntry(sourceEntry.getName()));
 
@@ -261,7 +257,7 @@ public class JarDeltaJarPatcherTest {
         boolean rc = false;
 
         try {
-            for (Enumeration enumer = zipSource.getEntries(); enumer.hasMoreElements();) {
+            for (Enumeration<ZipArchiveEntry> enumer = zipSource.getEntries(); enumer.hasMoreElements();) {
                 ZipArchiveEntry sourceEntry = (ZipArchiveEntry) enumer.nextElement();
                 ZipArchiveEntry resultEntry = resultZip.getEntry(sourceEntry.getName());
                 assertNotNull("Entry nicht generiert: " + sourceEntry.getName(),
@@ -399,6 +395,7 @@ public class JarDeltaJarPatcherTest {
 		ZipFile patch = new ZipFile(patchFile);
 		ZipArchiveEntry listEntry = patch.getEntry("META-INF/file.list");
 		if(listEntry==null) {
+			patch.close();
 			throw new IOException("Invalid patch - list entry 'META-INF/file.list' not found");
 		}
 		BufferedReader patchlist = new BufferedReader(new InputStreamReader(patch.getInputStream(listEntry)));

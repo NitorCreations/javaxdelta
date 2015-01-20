@@ -40,13 +40,15 @@ public class DebugDiffWriter implements DiffWriter {
      */
     public DebugDiffWriter() {}
     
-    public void addCopy(long offset, int length) throws IOException {
+    @Override
+	public void addCopy(long offset, int length) throws IOException {
         if (os.size() > 0)
             writeBuf();
         System.err.println("COPY off: " + offset + ", len: " + length);
     }
     
-    public void addData(byte b) throws IOException {
+    @Override
+	public void addData(byte b) throws IOException {
         os.write(b);
         writeBuf();
     }
@@ -57,17 +59,19 @@ public class DebugDiffWriter implements DiffWriter {
             if (ba[ix] == '\n')
                 System.err.print("\\n");
             else
-                System.err.print(String.valueOf((char)((char) ba[ix])));
+                System.err.print(String.valueOf(((char) ba[ix])));
             //System.err.print("0x" + Integer.toHexString(buf[ix]) + " "); // hex output
         }
         System.err.println("");
         os.reset();
     }
     
-    public void flush() throws IOException {
+    @Override
+	public void flush() throws IOException {
         System.err.println("FLUSH");
     }
-    public void close() throws IOException {
+    @Override
+	public void close() throws IOException {
         System.err.println("CLOSE");
     }
 
