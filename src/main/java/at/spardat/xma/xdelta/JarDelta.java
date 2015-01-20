@@ -54,9 +54,17 @@ import com.nothome.delta.GDiffWriter;
  * @author gruber
  */
 public class JarDelta {
+	
+	/** The Constant zipFilesPattern. */
 	private static final Pattern zipFilesPattern = Pattern.compile(".*?\\.zip$|.*?\\.jar$|.*?\\.war$|.*?\\.ear$", Pattern.CASE_INSENSITIVE);
+	
+	/** The Constant BUFFER_LEN. */
 	private static final int BUFFER_LEN = 8 * 1024;
+    
+    /** The buffer. */
     private final byte[] buffer = new byte[BUFFER_LEN];
+    
+    /** The calculated delta. */
     private byte[] calculatedDelta = null;
 	/**
      * Computes the binary differences of two zip files. For all files contained in source and target which
@@ -89,6 +97,16 @@ public class JarDelta {
         	output.flush();
     }
 
+	/**
+	 * Compute delta.
+	 *
+	 * @param source the source
+	 * @param target the target
+	 * @param output the output
+	 * @param list the list
+	 * @param prefix the prefix
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
 	public void computeDelta(ZipFile source, ZipFile target, ZipArchiveOutputStream output, PrintWriter list, String prefix) throws IOException {
         try {
     		for(Enumeration<ZipArchiveEntry> enumer=target.getEntries();enumer.hasMoreElements();) {
@@ -185,15 +203,25 @@ public class JarDelta {
 	
     /**
      * Test if the content of two byte arrays is completly identical.
+     *
+     * @param sourceEntry the source entry
+     * @param targetEntry the target entry
      * @return true if source and target contain the same bytes.
-     * @throws IOException 
-     * @throws ZipException 
      */
 	public boolean equal(ZipArchiveEntry sourceEntry, ZipArchiveEntry targetEntry) {
         return (sourceEntry.getSize() == targetEntry.getSize()) &&
         		(sourceEntry.getCrc() == targetEntry.getCrc());
     }
 	
+	/**
+	 * Find best source.
+	 *
+	 * @param source the source
+	 * @param target the target
+	 * @param targetEntry the target entry
+	 * @return the zip archive entry
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
 	public ZipArchiveEntry findBestSource(ZipFile source, ZipFile target, ZipArchiveEntry targetEntry) throws IOException {
 		ArrayList<ZipArchiveEntry> ret = new ArrayList<>();
 		for (ZipArchiveEntry next : source.getEntries(targetEntry.getName())) {
@@ -223,11 +251,15 @@ public class JarDelta {
 		}
 		return retEntry;
 	}
+	
 	/**
-     * Main method to make {@link #computeDelta(ZipFile, ZipFile, ZipOutputStream)} available at
-     * the command line.<br>
-     * usage JarDelta source target output
-     */
+	 * Main method to make {@link #computeDelta(String, String, ZipFile, ZipFile, ZipArchiveOutputStream)} available at
+	 * the command line.<br>
+	 * usage JarDelta source target output
+	 *
+	 * @param args the arguments
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
 	public static void main(String[] args) throws IOException {
 		if (args.length != 3) {
 			System.err.println("usage JarDelta source target output");
@@ -237,6 +269,15 @@ public class JarDelta {
         	new JarDelta().computeDelta(args[0], args[1], new ZipFile(args[0]), new ZipFile(args[1]), output);
         }
 	}
+	
+	/**
+	 * Entry to new name.
+	 *
+	 * @param source the source
+	 * @param name the name
+	 * @return the zip archive entry
+	 * @throws ZipException the zip exception
+	 */
 	private ZipArchiveEntry entryToNewName(ZipArchiveEntry source, String name) throws ZipException {
 		if (source.getName().equals(name)) return new ZipArchiveEntry(source);
 		ZipArchiveEntry ret = new ZipArchiveEntry(name);

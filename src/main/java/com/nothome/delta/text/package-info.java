@@ -2,9 +2,9 @@
  * This package contains classes for creating patches for text files output
  * in a GDIFF-like format.
  * <p>
- * The patch creation class is {@link Delta}.
+ * The patch creation class is {@link com.nothome.delta.Delta}.
  * <p>
- * The patch applier class is {@link TextPatcher}.
+ * The patch applier class is {@link com.nothome.delta.text.TextPatcher}.
  * <p>
  * Example use:
  <pre>
@@ -19,7 +19,7 @@
  assert target.equals(patchedSource);
  </pre>
  *
- * @see Delta
- * @see GDiffPatcher
+ * @see com.nothome.delta.Delta
+ * @see com.nothome.delta.GDiffPatcher
  */
 package com.nothome.delta.text;

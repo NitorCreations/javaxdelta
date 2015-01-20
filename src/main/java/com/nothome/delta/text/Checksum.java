@@ -35,15 +35,22 @@ import java.util.HashMap;
  */
 public class Checksum {
     
+    /** The debug. */
     public static boolean debug = false;
     
+    /** The checksums. */
     protected HashMap<Long, Integer> checksums = new HashMap<Long, Integer>();
     
+    /** The Constant single_hash. */
     private static final char[] single_hash = com.nothome.delta.Checksum.getSingleHash();
     
     /**
      * Initialize checksums for source. The checksum for the <code>chunkSize</code> bytes at offset
      * <code>chunkSize</code> * i is inserted into an array at index i.
+     *
+     * @param source the source
+     * @param chunkSize the chunk size
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public Checksum(Readable source, int chunkSize) throws IOException {
         CharBuffer bb = CharBuffer.allocate(chunkSize * 2);
@@ -63,6 +70,10 @@ public class Checksum {
     
     /**
      * Marks, gets, then resets the checksum computed from the buffer.
+     *
+     * @param bb the bb
+     * @param len the len
+     * @return the long
      */
     public static long queryChecksum(CharBuffer bb, int len) {
         bb.mark();
@@ -71,10 +82,23 @@ public class Checksum {
         return sum;
     }
     
+    /**
+     * B.
+     *
+     * @param c the c
+     * @return the byte
+     */
     private static byte b(char c) {
         return (byte)c;
     }
     
+    /**
+     * Query checksum0.
+     *
+     * @param bb the bb
+     * @param len the len
+     * @return the long
+     */
     private static long queryChecksum0(CharBuffer bb, int len) {
         int high = 0; int low = 0;
         for (int i = 0; i < len; i++) {
@@ -84,6 +108,15 @@ public class Checksum {
         return ((high & 0xffff) << 16) | (low & 0xffff);
     }
     
+    /**
+     * Increment checksum.
+     *
+     * @param checksum the checksum
+     * @param out the out
+     * @param in the in
+     * @param chunkSize the chunk size
+     * @return the long
+     */
     public static long incrementChecksum(long checksum, char out, char in, int chunkSize) {
         char old_c = single_hash[b(out)+128];
         char new_c = single_hash[b(in)+128];
@@ -92,6 +125,12 @@ public class Checksum {
         return (high << 16) | (low & 0xffff);
     }
     
+    /**
+     * Find checksum index.
+     *
+     * @param hashf the hashf
+     * @return the int
+     */
     public int findChecksumIndex(long hashf) {
         if (!checksums.containsKey(hashf))
             return -1;
@@ -100,6 +139,8 @@ public class Checksum {
 
     /**
      * Returns a debug <code>String</code>.
+     *
+     * @return the string
      */
     @Override
     public String toString()

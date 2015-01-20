@@ -40,6 +40,7 @@ public class GDiffWriter implements DiffWriter, AutoCloseable {
      */
     public static final int CHUNK_SIZE = Short.MAX_VALUE;
     
+    /** The Constant EOF. */
     public static final byte EOF = 0;
     
     /**
@@ -47,24 +48,47 @@ public class GDiffWriter implements DiffWriter, AutoCloseable {
      */
     public static final int DATA_MAX = 246;
     
+    /** The Constant DATA_USHORT. */
     public static final int DATA_USHORT = 247;
+    
+    /** The Constant DATA_INT. */
     public static final int DATA_INT = 248;
+    
+    /** The Constant COPY_USHORT_UBYTE. */
     public static final int COPY_USHORT_UBYTE = 249;
+    
+    /** The Constant COPY_USHORT_USHORT. */
     public static final int COPY_USHORT_USHORT = 250;
+    
+    /** The Constant COPY_USHORT_INT. */
     public static final int COPY_USHORT_INT = 251;
+    
+    /** The Constant COPY_INT_UBYTE. */
     public static final int COPY_INT_UBYTE = 252;
+    
+    /** The Constant COPY_INT_USHORT. */
     public static final int COPY_INT_USHORT = 253;
+    
+    /** The Constant COPY_INT_INT. */
     public static final int COPY_INT_INT = 254;
+    
+    /** The Constant COPY_LONG_INT. */
     public static final int COPY_LONG_INT = 255;
 
+    /** The buf. */
     private ByteArrayOutputStream buf = new ByteArrayOutputStream();
 
+    /** The debug. */
     private boolean debug = false;
     
+    /** The output. */
     private DataOutputStream output = null;
     
     /**
      * Constructs a new GDiffWriter.
+     *
+     * @param os the os
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public GDiffWriter(DataOutputStream os) throws IOException {
         this.output = os;
@@ -78,11 +102,17 @@ public class GDiffWriter implements DiffWriter, AutoCloseable {
     
     /**
      * Constructs a new GDiffWriter.
+     *
+     * @param output the output
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public GDiffWriter(OutputStream output) throws IOException {
         this(new DataOutputStream(output));
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.DiffWriter#addCopy(long, int)
+     */
     @Override
 	public void addCopy(long offset, int length) throws IOException {
         writeBuf();
@@ -130,6 +160,9 @@ public class GDiffWriter implements DiffWriter, AutoCloseable {
     
     /**
      * Adds a data byte.
+     *
+     * @param b the b
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     @Override
 	public void addData(byte b) throws IOException {
@@ -138,6 +171,11 @@ public class GDiffWriter implements DiffWriter, AutoCloseable {
             writeBuf();
     }
     
+    /**
+     * Write buf.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     private void writeBuf() throws IOException {
         if (buf.size() > 0) {
             if (buf.size() <= DATA_MAX) {
@@ -156,6 +194,8 @@ public class GDiffWriter implements DiffWriter, AutoCloseable {
     
     /**
      * Flushes accumulated data bytes, if any.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     @Override
 	public void flush() throws IOException 
@@ -166,6 +206,8 @@ public class GDiffWriter implements DiffWriter, AutoCloseable {
     
     /**
      * Writes the final EOF byte, closes the underlying stream.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     @Override
 	public void close() throws IOException {

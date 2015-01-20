@@ -34,10 +34,13 @@ import java.util.HashMap;
  */
 public class Checksum {
     
+    /** The Constant debug. */
     static final boolean debug = false;
     
+    /** The checksums. */
     private HashMap<Long, Integer> checksums = new HashMap<Long, Integer>();
     
+    /** The Constant single_hash. */
     private static final char single_hash[] = {
         /* Random numbers generated using SLIB's pseudo-random number generator. */
         0xbcd1, 0xbb65, 0x42c2, 0xdffe, 0x9666, 0x431b, 0x8504, 0xeb46,
@@ -77,6 +80,10 @@ public class Checksum {
     /**
      * Initialize checksums for source. The checksum for the <code>chunkSize</code> bytes at offset
      * <code>chunkSize</code> * i is inserted into a hash map.
+     *
+     * @param source the source
+     * @param chunkSize the chunk size
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public Checksum(SeekableSource source, int chunkSize) throws IOException {
         ByteBuffer bb = ByteBuffer.allocate(chunkSize * 2);
@@ -97,6 +104,10 @@ public class Checksum {
     /**
      * Finds the checksum computed from the buffer.
      * Marks, gets, then resets the buffer.
+     *
+     * @param bb the bb
+     * @param len the len
+     * @return the long
      */
     public static long queryChecksum(ByteBuffer bb, int len) {
         bb.mark();
@@ -105,6 +116,13 @@ public class Checksum {
         return sum;
     }
     
+    /**
+     * Query checksum0.
+     *
+     * @param bb the bb
+     * @param len the len
+     * @return the long
+     */
     private static long queryChecksum0(ByteBuffer bb, int len) {
         int high = 0; int low = 0;
         for (int i = 0; i < len; i++) {
@@ -131,7 +149,9 @@ public class Checksum {
     }
     
     /**
-     * 256 random hash values. 
+     * 256 random hash values.
+     *
+     * @return the single hash
      */
     public static char[] getSingleHash() {
         return single_hash;
@@ -139,6 +159,9 @@ public class Checksum {
 
     /**
      * Finds the index of a checksum.
+     *
+     * @param hashf the hashf
+     * @return the int
      */
     public int findChecksumIndex(long hashf) {
         if (!checksums.containsKey(hashf))
@@ -148,6 +171,8 @@ public class Checksum {
 
     /**
      * Returns a debug <code>String</code>.
+     *
+     * @return the string
      */
     @Override
     public String toString()

@@ -12,6 +12,11 @@ import org.junit.Test;
  */
 public class GDiffWriterTest {
 
+    /**
+     * Test ver.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     @Test
     public void testVer() throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();

@@ -38,8 +38,14 @@ import org.junit.Test;
  */
 public class ChecksumTest {
 
+    /** The s. */
     String s = "abcdefghijklmnopqrstuvwyxz012345679";
     
+    /**
+     * Test check.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     @Test
     public void testCheck() throws IOException {
        testCheck(16);
@@ -47,6 +53,12 @@ public class ChecksumTest {
        testCheck(10); 
     }
     
+    /**
+     * Test check.
+     *
+     * @param chunk the chunk
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public void testCheck(int chunk) throws IOException {
         byte[] bytes = s.getBytes("ASCII");
         ByteBufferSeekableSource source = new ByteBufferSeekableSource(bytes);

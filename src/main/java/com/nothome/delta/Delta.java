@@ -54,9 +54,9 @@ import java.nio.channels.ReadableByteChannel;
  * Class for computing deltas against a source.
  * The source file is read by blocks and a hash is computed per block.
  * Then the target is scanned for matching blocks.
- * <p/>
+ * <p>
  * This class is not thread safe. Use one instance per thread.
- * <p/>
+ * <p>
  * This class should support files over 4GB in length, although you must
  * use a larger checksum size, such as 1K, as all checksums use "int" indexing.
  * Newer versions may eventually support paging in/out of checksums.
@@ -82,8 +82,13 @@ public class Delta {
      */
     private int S;
     
+    /** The source. */
     private SourceState source;
+    
+    /** The target. */
     private TargetState target;
+    
+    /** The output. */
     private DiffWriter output;
     
     /**
@@ -98,8 +103,8 @@ public class Delta {
      * Sets the chunk size used.
      * Larger chunks are faster and use less memory, but create larger patches
      * as well.
-     * 
-     * @param size
+     *
+     * @param size the new chunk size
      */
     public void setChunkSize(int size) {
         if (size <= 0)
@@ -109,6 +114,11 @@ public class Delta {
     
     /**
      * Compares the source bytes with target bytes, writing to output.
+     *
+     * @param source the source
+     * @param target the target
+     * @param output the output
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void compute(byte source[], byte target[], OutputStream output)
     throws IOException {
@@ -119,6 +129,11 @@ public class Delta {
     
     /**
      * Compares the source bytes with target bytes, returning output.
+     *
+     * @param source the source
+     * @param target the target
+     * @return the byte[]
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public byte[] compute(byte source[], byte target[])
     throws IOException {
@@ -129,6 +144,11 @@ public class Delta {
     
     /**
      * Compares the source bytes with target input, writing to output.
+     *
+     * @param sourceBytes the source bytes
+     * @param inputStream the input stream
+     * @param diffWriter the diff writer
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void compute(byte[] sourceBytes, InputStream inputStream,
             DiffWriter diffWriter) throws IOException
@@ -139,8 +159,11 @@ public class Delta {
     
     /**
      * Compares the source file with a target file, writing to output.
-     * 
+     *
+     * @param sourceFile the source file
+     * @param targetFile the target file
      * @param output will be closed
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void compute(File sourceFile, File targetFile, DiffWriter output)
     throws IOException {
@@ -156,8 +179,11 @@ public class Delta {
     
     /**
      * Compares the source with a target, writing to output.
-     * 
+     *
+     * @param seekSource the seek source
+     * @param targetIS the target is
      * @param output will be closed
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void compute(SeekableSource seekSource, InputStream targetIS, DiffWriter output)
     throws IOException {
@@ -197,6 +223,11 @@ public class Delta {
         output.close();
     }
     
+    /**
+     * Adds the data.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     private void addData() throws IOException {
         int i = target.read();
         if (debug)
@@ -206,23 +237,43 @@ public class Delta {
         output.addData((byte)i);
     }
     
+    /**
+     * The Class SourceState.
+     */
     class SourceState {
 
+        /** The checksum. */
         private Checksum checksum;
+        
+        /** The source. */
         private SeekableSource source;
         
+        /**
+         * Instantiates a new source state.
+         *
+         * @param source the source
+         * @throws IOException Signals that an I/O exception has occurred.
+         */
         public SourceState(SeekableSource source) throws IOException {
             checksum = new Checksum(source, S);
             this.source = source;
             source.seek(0);
         }
 
+        /**
+         * Seek.
+         *
+         * @param index the index
+         * @throws IOException Signals that an I/O exception has occurred.
+         */
         public void seek(long index) throws IOException {
             source.seek(index);
         }
 
         /**
          * Returns a debug <code>String</code>.
+         *
+         * @return the string
          */
         @Override
         public String toString()
@@ -235,26 +286,55 @@ public class Delta {
         
     }
         
+    /**
+     * The Class TargetState.
+     */
     class TargetState {
         
+        /** The c. */
         private ReadableByteChannel c;
+        
+        /** The tbuf. */
         private ByteBuffer tbuf = ByteBuffer.allocate(blocksize());
+        
+        /** The sbuf. */
         private ByteBuffer sbuf = ByteBuffer.allocate(blocksize());
+        
+        /** The hash. */
         private long hash;
+        
+        /** The hash reset. */
         private boolean hashReset = true;
+        
+        /** The eof. */
         private boolean eof;
         
+        /**
+         * Instantiates a new target state.
+         *
+         * @param targetIS the target is
+         * @throws IOException Signals that an I/O exception has occurred.
+         */
         TargetState(InputStream targetIS) throws IOException {
             c = Channels.newChannel(targetIS);
             tbuf.limit(0);
         }
         
+        /**
+         * Blocksize.
+         *
+         * @return the int
+         */
         private int blocksize() {
             return Math.min(1024 * 16, S * 4);
         }
 
         /**
          * Returns the index of the next N bytes of the stream.
+         *
+         * @param source the source
+         * @return the int
+         * @throws IOException Signals that an I/O exception has occurred.
          */
         public int find(SourceState source) throws IOException {
             if (eof)
@@ -280,13 +360,20 @@ public class Delta {
             return source.checksum.findChecksumIndex(hash);
         }
 
+        /**
+         * Eof.
+         *
+         * @return true, if successful
+         */
         public boolean eof() {
             return eof;
         }
 
         /**
          * Reads a byte.
-         * @throws IOException
+         *
+         * @return the int
+         * @throws IOException Signals that an I/O exception has occurred.
          */
         public int read() throws IOException {
             if (tbuf.remaining() <= S) {
@@ -308,6 +395,10 @@ public class Delta {
 
         /**
          * Returns the longest match length at the source location.
+         *
+         * @param source the source
+         * @return the int
+         * @throws IOException Signals that an I/O exception has occurred.
          */
         public int longestMatch(SourceState source) throws IOException {
             debug("longestMatch");
@@ -337,6 +428,11 @@ public class Delta {
             }
         }
 
+        /**
+         * Read more.
+         *
+         * @throws IOException Signals that an I/O exception has occurred.
+         */
         private void readMore() throws IOException {
             if (debug)
                 debug("readMore " + tbuf);
@@ -345,12 +441,17 @@ public class Delta {
             tbuf.flip();
         }
 
+        /**
+         * Hash.
+         */
         void hash() {
             hash = Checksum.queryChecksum(tbuf, S);
         }
 
         /**
          * Returns a debug <code>String</code>.
+         *
+         * @return the string
          */
         @Override
         public String toString()
@@ -363,12 +464,29 @@ public class Delta {
                 "]";
         }
         
+        /**
+         * Dump.
+         *
+         * @return the string
+         */
         private String dump() { return dump(tbuf); }
         
+        /**
+         * Dump.
+         *
+         * @param bb the bb
+         * @return the string
+         */
         private String dump(ByteBuffer bb) {
             return getTextDump(bb);
         }
         
+        /**
+         * Append.
+         *
+         * @param sb the sb
+         * @param value the value
+         */
         private void append(StringBuffer sb, int value) {
             char b1 = (char)((value >> 4) & 0x0F);
             char b2 = (char)((value) & 0x0F);
@@ -376,6 +494,12 @@ public class Delta {
             sb.append( Character.forDigit(b2, 16) );
         }
 
+        /**
+         * Gets the text dump.
+         *
+         * @param bb the bb
+         * @return the text dump
+         */
         public String getTextDump(ByteBuffer bb)
         {
             StringBuffer sb = new StringBuffer(bb.remaining() * 2);
@@ -395,6 +519,9 @@ public class Delta {
     
     /**
      * Creates a patch using file names.
+     *
+     * @param argv the arguments
+     * @throws Exception the exception
      */
     public static void main(String argv[]) throws Exception {
         if (argv.length != 3) {
@@ -439,6 +566,11 @@ public class Delta {
             System.out.println("finished generating delta");
     }
     
+    /**
+     * Debug.
+     *
+     * @param s the s
+     */
     private void debug(String s) {
         if (debug)
             System.err.println(s);

@@ -47,27 +47,52 @@ import org.junit.Test;
  */
 public class DeltaDiffPatchBoundariesTest {
 
+    /**
+     * Test case1.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testCase1() throws Exception {
         run("0123456789abcdef", "0123456789abcdef");
     }
 
+    /**
+     * Test case2.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testCase2() throws Exception {
         run("0123456789abcdef", "0123456789abcdef+");
     }
 
+    /**
+     * Test case3.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testCase3() throws Exception {
         run("0123456789abcdef0", "0123456789abcdef0+");
     }
 
+    /**
+     * Test case4.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testCase4() throws Exception {
         run("0123456789abcdef0123456789abcdef",
                 "0123456789abcdef0123456789abcdef+");
     }
 
+    /**
+     * Test case4b.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testCase4b() throws Exception {
         String a = "aaaaaaaaaaaaaaaa";
@@ -75,11 +100,21 @@ public class DeltaDiffPatchBoundariesTest {
         run(a + x, x + a);
     }
 
+    /**
+     * Test case5.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testCase5() throws Exception {
         run("0123456789abcdef0123456789abcdef", "0123456789abcdef");
     }
 
+    /**
+     * Test case6.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testCase6() throws Exception {
         run(
@@ -88,12 +123,24 @@ public class DeltaDiffPatchBoundariesTest {
         // / 0123456789123456789
     }
 
+    /**
+     * Test short.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testShort() throws Exception {
         run("0123456789abcdef", "0123456789");
         run("0123456789", "0123456789abcdef");
     }
 
+    /**
+     * Run.
+     *
+     * @param string1 the string1
+     * @param string2 the string2
+     * @throws Exception the exception
+     */
     private void run(String string1, String string2) throws Exception {
         File test1File = new File("test1.txt");
         File test2File = new File("test2.txt");
@@ -138,6 +185,12 @@ public class DeltaDiffPatchBoundariesTest {
         }
     }
 
+    /**
+     * Fmt.
+     *
+     * @param read the read
+     * @return the string
+     */
     private String fmt(ByteArrayOutputStream read) {
         byte[] b = read.toByteArray();
         StringBuilder sb = new StringBuilder();

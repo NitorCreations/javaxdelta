@@ -7,8 +7,16 @@ import java.io.StringWriter;
 
 import org.junit.Test;
 
+/**
+ * The Class TextPatcherTest.
+ */
 public class TextPatcherTest {
 
+    /**
+     * Test patching.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     @Test
     public void testPatching() throws IOException {
         //          0123456

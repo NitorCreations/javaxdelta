@@ -51,7 +51,7 @@ import java.nio.CharBuffer;
  * Class for computing deltas against a source.
  * The source file is read by blocks and a hash is computed per block.
  * Then the target is scanned for matching blocks.
- * <p/>
+ * <p>
  * Essentially a duplicate of com.nothome.delta.Delta for character streams.
  */
 public class Delta {
@@ -75,10 +75,18 @@ public class Delta {
      */
     private int S;
     
+    /** The source. */
     private SourceState source;
+    
+    /** The target. */
     private TargetState target;
+    
+    /** The output. */
     private DiffTextWriter output;
     
+    /**
+     * Instantiates a new delta.
+     */
     public Delta() {
         setChunkSize(DEFAULT_CHUNK_SIZE);
     }
@@ -87,8 +95,8 @@ public class Delta {
      * Sets the chunk size used.
      * Larger chunks are faster and use less memory, but create larger patches
      * as well.
-     * 
-     * @param size
+     *
+     * @param size the new chunk size
      */
     public void setChunkSize(int size) {
         if (size <= 0)
@@ -98,6 +106,11 @@ public class Delta {
     
     /**
      * Compares the source bytes with target bytes, writing to output.
+     *
+     * @param source the source
+     * @param target the target
+     * @param output the output
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void compute(CharSequence source, CharSequence target, Writer output)
     throws IOException {
@@ -108,6 +121,11 @@ public class Delta {
     
     /**
      * Compares the source bytes with target bytes, returning differences.
+     *
+     * @param source the source
+     * @param target the target
+     * @return the string
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public String compute(CharSequence source, CharSequence target)
     throws IOException {
@@ -118,10 +136,10 @@ public class Delta {
     
     /**
      * Compares the source with a target, writing to output.
-     * 
+     *
+     * @param seekSource the seek source
      * @param targetIS second file to compare with
      * @param output diff output
-     * 
      * @throws IOException if diff generation fails
      */
     public void compute(SeekableSource seekSource, Reader targetIS, DiffTextWriter output)
@@ -162,6 +180,11 @@ public class Delta {
         output.close();
     }
     
+    /**
+     * Adds the data.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     private void addData() throws IOException {
         int i = target.read();
         if (debug)
@@ -171,23 +194,43 @@ public class Delta {
         output.addData((char)i);
     }
     
+    /**
+     * The Class SourceState.
+     */
     class SourceState {
 
+        /** The checksum. */
         private Checksum checksum;
+        
+        /** The source. */
         private SeekableSource source;
         
+        /**
+         * Instantiates a new source state.
+         *
+         * @param source the source
+         * @throws IOException Signals that an I/O exception has occurred.
+         */
         public SourceState(SeekableSource source) throws IOException {
             checksum = new Checksum(source, S);
             this.source = source;
             source.seek(0);
         }
 
+        /**
+         * Seek.
+         *
+         * @param index the index
+         * @throws IOException Signals that an I/O exception has occurred.
+         */
         public void seek(long index) throws IOException {
             source.seek(index);
         }
 
         /**
          * Returns a debug <code>String</code>.
+         *
+         * @return the string
          */
         @Override
         public String toString()
@@ -200,26 +243,55 @@ public class Delta {
         
     }
         
+    /**
+     * The Class TargetState.
+     */
     class TargetState {
         
+        /** The c. */
         private Readable c;
+        
+        /** The tbuf. */
         private CharBuffer tbuf = CharBuffer.allocate(blocksize());
+        
+        /** The sbuf. */
         private CharBuffer sbuf = CharBuffer.allocate(blocksize());
+        
+        /** The hash. */
         private long hash;
+        
+        /** The hash reset. */
         private boolean hashReset = true;
+        
+        /** The eof. */
         private boolean eof;
         
+        /**
+         * Instantiates a new target state.
+         *
+         * @param targetIS the target is
+         * @throws IOException Signals that an I/O exception has occurred.
+         */
         TargetState(Reader targetIS) throws IOException {
             c = targetIS;
             tbuf.limit(0);
         }
         
+        /**
+         * Blocksize.
+         *
+         * @return the int
+         */
         private int blocksize() {
             return Math.max(1024 * 8, S * 4);
         }
 
         /**
          * Returns the index of the next N bytes of the stream.
+         *
+         * @param source the source
+         * @return the int
+         * @throws IOException Signals that an I/O exception has occurred.
          */
         public int find(SourceState source) throws IOException {
             if (eof)
@@ -245,13 +317,20 @@ public class Delta {
             return source.checksum.findChecksumIndex(hash);
         }
 
+        /**
+         * Eof.
+         *
+         * @return true, if successful
+         */
         public boolean eof() {
             return eof;
         }
 
         /**
          * Reads a char.
-         * @throws IOException
+         *
+         * @return the int
+         * @throws IOException Signals that an I/O exception has occurred.
          */
         public int read() throws IOException {
             if (tbuf.remaining() <= S) {
@@ -273,6 +352,10 @@ public class Delta {
 
         /**
          * Returns the longest match length at the source location.
+         *
+         * @param source the source
+         * @return the int
+         * @throws IOException Signals that an I/O exception has occurred.
          */
         public int longestMatch(SourceState source) throws IOException {
             debug("longestMatch");
@@ -302,6 +385,11 @@ public class Delta {
             }
         }
 
+        /**
+         * Read more.
+         *
+         * @throws IOException Signals that an I/O exception has occurred.
+         */
         private void readMore() throws IOException {
             if (debug)
                 debug("readMore " + tbuf);
@@ -310,12 +398,17 @@ public class Delta {
             tbuf.flip();
         }
 
+        /**
+         * Hash.
+         */
         void hash() {
             hash = Checksum.queryChecksum(tbuf, S);
         }
 
         /**
          * Returns a debug <code>String</code>.
+         *
+         * @return the string
          */
         @Override
         public String toString()
@@ -328,8 +421,19 @@ public class Delta {
                 "]";
         }
         
+        /**
+         * Dump.
+         *
+         * @return the string
+         */
         private String dump() { return dump(tbuf); }
         
+        /**
+         * Dump.
+         *
+         * @param bb the bb
+         * @return the string
+         */
         private String dump(CharBuffer bb) {
             bb.mark();
             StringBuilder sb = new StringBuilder();
@@ -341,17 +445,36 @@ public class Delta {
         
     }
     
+    /**
+     * Debug.
+     *
+     * @param s the s
+     */
     private void debug(String s) {
         if (debug)
             System.err.println(s);
     }
 
+    /**
+     * For file.
+     *
+     * @param name the name
+     * @return the reader
+     * @throws FileNotFoundException the file not found exception
+     */
     static Reader forFile(File name) throws FileNotFoundException {
         FileInputStream f1 = new FileInputStream(name);
         InputStreamReader isr = new InputStreamReader(f1);
         return new BufferedReader(isr);
     }
     
+    /**
+     * To string.
+     *
+     * @param r the r
+     * @return the char sequence
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     static CharSequence toString(Reader r) throws IOException {
         StringBuilder sb = new StringBuilder();
         while (true) {
@@ -365,6 +488,9 @@ public class Delta {
     
     /**
      * Creates a patch with file names.
+     *
+     * @param s the arguments
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public static void main(String s[]) throws IOException {
         if (s.length != 2) {

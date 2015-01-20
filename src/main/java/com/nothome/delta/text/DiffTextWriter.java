@@ -34,23 +34,32 @@ public interface DiffTextWriter extends Closeable {
     
     /**
      * Add a copy command.
+     *
      * @param offset start of sequence
      * @param length length of sequence
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     void addCopy(int offset, int length) throws IOException;
     
     /**
      * Add a character to output.
+     *
+     * @param seq the seq
+     * @throws IOException Signals that an I/O exception has occurred.
      */
 	void addData(char seq) throws IOException;
 	
 	/**
 	 * Writes current state to output stream.
+	 *
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
     void flush() throws IOException;
     
     /**
      * Frees internal resources; closes output stream.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     @Override
 	void close() throws IOException;

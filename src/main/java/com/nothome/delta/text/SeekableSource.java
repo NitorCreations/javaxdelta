@@ -27,12 +27,15 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Text seekable source
+ * Text seekable source.
  */
 public interface SeekableSource extends Readable, Closeable {
     
     /**
      * Sets the position for the next read operation.
+     *
+     * @param pos the pos
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void seek(long pos) throws IOException;
     

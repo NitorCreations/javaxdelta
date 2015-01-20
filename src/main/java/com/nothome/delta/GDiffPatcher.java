@@ -52,14 +52,17 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 /**
- * This class patches an input file with a GDIFF patch fil�e.
+ * This class patches an input file with a GDIFF patch file.
  *
  * The patch file follows the GDIFF file specification available at
- * {@link http://www.w3.org/TR/NOTE-gdiff-19970901.html}.
+ * <a href="http://www.w3.org/TR/NOTE-gdiff-19970901.html">NOTE-gdiff-19970901</a>.
  */
 public class GDiffPatcher {
     
+    /** The buf. */
     private ByteBuffer buf = ByteBuffer.allocate(1024);
+    
+    /** The buf2. */
     private byte buf2[] = buf.array();
 
     /**
@@ -70,6 +73,11 @@ public class GDiffPatcher {
     
     /**
      * Patches to an output file.
+     *
+     * @param sourceFile the source file
+     * @param patchFile the patch file
+     * @param outputFile the output file
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void patch(File sourceFile, File patchFile, File outputFile)
 		throws IOException
@@ -90,6 +98,11 @@ public class GDiffPatcher {
     
     /**
      * Patches to an output stream.
+     *
+     * @param source the source
+     * @param patch the patch
+     * @param output the output
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void patch(byte[] source, InputStream patch, OutputStream output) throws IOException {
         patch(new ByteBufferSeekableSource(source), patch, output);
@@ -97,6 +110,11 @@ public class GDiffPatcher {
     
     /**
      * Patches in memory, returning the patch result.
+     *
+     * @param source the source
+     * @param patch the patch
+     * @return the byte[]
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public byte[] patch(byte[] source, byte[] patch) throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -106,6 +124,11 @@ public class GDiffPatcher {
     
     /**
      * Patches to an output stream.
+     *
+     * @param source the source
+     * @param patch the patch
+     * @param out the out
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void patch(SeekableSource source, InputStream patch, OutputStream out) throws IOException {
         
@@ -185,6 +208,15 @@ public class GDiffPatcher {
 		outOS.flush();
     }
 
+    /**
+     * Copy.
+     *
+     * @param offset the offset
+     * @param length the length
+     * @param source the source
+     * @param output the output
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     private void copy(long offset, int length, SeekableSource source, OutputStream output)
 		throws IOException
 	{
@@ -200,6 +232,14 @@ public class GDiffPatcher {
         }
     }
 
+    /**
+     * Append.
+     *
+     * @param length the length
+     * @param patch the patch
+     * @param output the output
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     private void append(int length, InputStream patch, OutputStream output) throws IOException {
         while (length > 0) {
             int len = Math.min(buf2.length, length);
@@ -213,6 +253,8 @@ public class GDiffPatcher {
 
     /**
      * Simple command line tool to patch a file.
+     *
+     * @param argv the arguments
      */
     public static void main(String argv[]) {
 

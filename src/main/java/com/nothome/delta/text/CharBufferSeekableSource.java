@@ -33,11 +33,16 @@ import java.nio.CharBuffer;
  */
 public class CharBufferSeekableSource implements SeekableSource {
     
+    /** The cb. */
     private CharBuffer cb;
+    
+    /** The cur. */
     private CharBuffer cur;
 
     /**
      * Constructs a new CharBufferSeekableSource.
+     *
+     * @param cb the cb
      */
     public CharBufferSeekableSource(CharBuffer cb) {
         if (cb == null)
@@ -52,11 +57,16 @@ public class CharBufferSeekableSource implements SeekableSource {
     
     /**
      * Constructs a new CharBufferSeekableSource from a char sequence (String).
+     *
+     * @param seq the seq
      */
     public CharBufferSeekableSource(CharSequence seq) {
         this(CharBuffer.wrap(seq));
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.text.SeekableSource#seek(long)
+     */
     @Override
 	public void seek(long pos) throws IOException {
         cb.rewind();
@@ -66,11 +76,17 @@ public class CharBufferSeekableSource implements SeekableSource {
         cur.position((int) pos);
     }
 
+    /* (non-Javadoc)
+     * @see java.lang.Readable#read(java.nio.CharBuffer)
+     */
     @Override
 	public int read(CharBuffer charbuffer) throws IOException {
         return cur.read(charbuffer);
     }
 
+    /* (non-Javadoc)
+     * @see java.io.Closeable#close()
+     */
     @Override
 	public void close() throws IOException {
     }

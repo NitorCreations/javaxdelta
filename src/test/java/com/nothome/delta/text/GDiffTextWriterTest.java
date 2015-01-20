@@ -7,8 +7,16 @@ import java.io.StringWriter;
 
 import org.junit.Test;
 
+/**
+ * The Class GDiffTextWriterTest.
+ */
 public class GDiffTextWriterTest {
 
+    /**
+     * Test ver.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     @Test
     public void testVer() throws IOException {
         StringWriter sw = new StringWriter();

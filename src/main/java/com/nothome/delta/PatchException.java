@@ -33,6 +33,7 @@ import java.io.IOException;
  */
 public class PatchException extends IOException {
     
+    /** The Constant serialVersionUID. */
     private static final long serialVersionUID = 1;
 
     /**

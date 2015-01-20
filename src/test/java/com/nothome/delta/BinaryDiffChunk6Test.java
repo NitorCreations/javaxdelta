@@ -30,6 +30,13 @@ import org.junit.Test;
  */
 public class BinaryDiffChunk6Test {
 
+    /**
+     * Read fully.
+     *
+     * @param fileName the file name
+     * @return the byte[]
+     * @throws Exception the exception
+     */
     public byte[] readFully(String fileName) throws Exception {
         System.out.println("looking for: " + fileName);
         RandomAccessFile raf = new RandomAccessFile(new File("target/test-classes/"
@@ -41,6 +48,11 @@ public class BinaryDiffChunk6Test {
         return data;
     }
 
+    /**
+     * Test it.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testIt() throws Exception {
         String o1 = "obj1.bin";
@@ -64,6 +76,10 @@ public class BinaryDiffChunk6Test {
     }
 
     /**
+     * Compare originals.
+     *
+     * @param b2 the b2
+     * @param patched_b1 the patched_b1
      * @return true if identical
      */
     private boolean compareOriginals(byte[] b2, byte[] patched_b1) {

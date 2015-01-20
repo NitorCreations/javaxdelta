@@ -18,10 +18,15 @@ import at.spardat.xma.xdelta.test.JarDeltaJarPatcherTest;
  */
 public class MixedDiffTest {
 
+    /** The random. */
     private SecureRandom random;
 
+    /** The byte max length. */
     private int byteMaxLength = 1000;
 
+    /**
+     * Instantiates a new mixed diff test.
+     */
     public MixedDiffTest() {
         try {
             random = SecureRandom.getInstance("SHA1PRNG");
@@ -30,6 +35,11 @@ public class MixedDiffTest {
         }
     }
 
+    /**
+     * Test it.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testIt() throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -56,6 +66,11 @@ public class MixedDiffTest {
         }
     }
 
+    /**
+     * Gets the random bytes.
+     *
+     * @return the random bytes
+     */
     private byte[] getRandomBytes() {
         int lengt = randomSize(byteMaxLength);
         byte[] bytes = new byte[lengt];
@@ -63,10 +78,23 @@ public class MixedDiffTest {
         return bytes;
     }
 
+    /**
+     * Random size.
+     *
+     * @param maxSize the max size
+     * @return the int
+     */
     private int randomSize(int maxSize) {
         return ((int) (maxSize * random.nextFloat())) + 1;
     }
 
+    /**
+     * Mix bytes.
+     *
+     * @param oldBytes the old bytes
+     * @param newBytes the new bytes
+     * @return the byte[]
+     */
     private byte[] mixBytes(byte[] oldBytes, byte[] newBytes) {
         byte[] bytes = new byte[oldBytes.length + newBytes.length];
 

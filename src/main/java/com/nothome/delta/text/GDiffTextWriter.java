@@ -79,10 +79,13 @@ public class GDiffTextWriter implements DiffTextWriter {
      */
     public static final char COMMA = ',';
 
+    /** The Constant GDT. */
     static final String GDT = "gdt";
     
+    /** The caw. */
     private CharArrayWriter caw = new CharArrayWriter();
 
+    /** The w. */
     private Writer w = null;
     
     /**
@@ -94,8 +97,9 @@ public class GDiffTextWriter implements DiffTextWriter {
 
     /**
      * Constructs a new GDiffTextWriter.
-     * @param w
-     * @throws IOException
+     *
+     * @param w the w
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public GDiffTextWriter(Writer w) throws IOException {
         if (w == null)
@@ -105,10 +109,19 @@ public class GDiffTextWriter implements DiffTextWriter {
         w.write(LF);
     }
 
+    /**
+     * D.
+     *
+     * @param i the i
+     * @return the string
+     */
     private String d(int i) {
         return Integer.toHexString(i);
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.text.DiffTextWriter#addCopy(int, int)
+     */
     @Override
 	public void addCopy(int offset, int length) throws IOException {
         writeBuf();
@@ -119,6 +132,9 @@ public class GDiffTextWriter implements DiffTextWriter {
         w.write(LF);
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.text.DiffTextWriter#addData(char)
+     */
     @Override
 	public void addData(char c) throws IOException {
         caw.append(c);
@@ -126,6 +142,11 @@ public class GDiffTextWriter implements DiffTextWriter {
             flush();
     }
 
+    /**
+     * Write buf.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     private void writeBuf() throws IOException {
         if (caw.size() == 0)
             return;
@@ -137,12 +158,18 @@ public class GDiffTextWriter implements DiffTextWriter {
         w.write(LF);
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.text.DiffTextWriter#flush()
+     */
     @Override
 	public void flush() throws IOException {
         writeBuf();
         w.flush();
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.text.DiffTextWriter#close()
+     */
     @Override
 	public void close() throws IOException {
         flush();

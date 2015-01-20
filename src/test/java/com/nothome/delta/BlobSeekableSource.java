@@ -6,25 +6,44 @@ import java.nio.ByteBuffer;
 import java.sql.Blob;
 import java.sql.SQLException;
 
+/**
+ * The Class BlobSeekableSource.
+ */
 public class BlobSeekableSource implements SeekableSource {
 
+    /** The lob. */
     private Blob lob;
+    
+    /** The pos. */
     private long pos = 0;
+    
+    /** The is. */
     private InputStream is;
 
     /**
      * Constructs a new BlobSeekableSource.
-     * @throws IOException 
+     *
+     * @param lob the lob
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public BlobSeekableSource(Blob lob) throws IOException {
         this.lob = lob;
         this.is = getStream();
     }
 
+    /* (non-Javadoc)
+     * @see java.io.Closeable#close()
+     */
     public void close() throws IOException {
         is.close();
     }
     
+    /**
+     * Gets the stream.
+     *
+     * @return the stream
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     InputStream getStream() throws IOException {
         try {
             return lob.getBinaryStream();
@@ -33,6 +52,12 @@ public class BlobSeekableSource implements SeekableSource {
         }
     }
 
+    /**
+     * Length.
+     *
+     * @return the long
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public long length() throws IOException {
         try {
             return lob.length();
@@ -41,6 +66,15 @@ public class BlobSeekableSource implements SeekableSource {
         }
     }
 
+    /**
+     * Read.
+     *
+     * @param b the b
+     * @param off the off
+     * @param len the len
+     * @return the int
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public int read(byte[] b, int off, int len) throws IOException {
         if (is != null)
             return is.read(b, off, len);
@@ -54,6 +88,9 @@ public class BlobSeekableSource implements SeekableSource {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.SeekableSource#seek(long)
+     */
     public void seek(long pos) throws IOException {
         if (pos == 0) {
             is = getStream();
@@ -64,6 +101,9 @@ public class BlobSeekableSource implements SeekableSource {
         this.pos = pos;
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.SeekableSource#read(java.nio.ByteBuffer)
+     */
     public int read(ByteBuffer bb) throws IOException {
         return 0;
     }

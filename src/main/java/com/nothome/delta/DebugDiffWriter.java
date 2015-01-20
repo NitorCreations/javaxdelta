@@ -33,6 +33,7 @@ import java.io.IOException;
  */
 public class DebugDiffWriter implements DiffWriter {
     
+    /** The os. */
     private ByteArrayOutputStream os = new ByteArrayOutputStream();
     
     /**
@@ -40,6 +41,9 @@ public class DebugDiffWriter implements DiffWriter {
      */
     public DebugDiffWriter() {}
     
+    /* (non-Javadoc)
+     * @see com.nothome.delta.DiffWriter#addCopy(long, int)
+     */
     @Override
 	public void addCopy(long offset, int length) throws IOException {
         if (os.size() > 0)
@@ -47,11 +51,18 @@ public class DebugDiffWriter implements DiffWriter {
         System.err.println("COPY off: " + offset + ", len: " + length);
     }
     
+    /* (non-Javadoc)
+     * @see com.nothome.delta.DiffWriter#addData(byte)
+     */
     @Override
 	public void addData(byte b) throws IOException {
         os.write(b);
         writeBuf();
     }
+    
+    /**
+     * Write buf.
+     */
     private void writeBuf() {
         System.err.print("DATA: ");
         byte[] ba = os.toByteArray();
@@ -66,10 +77,17 @@ public class DebugDiffWriter implements DiffWriter {
         os.reset();
     }
     
+    /* (non-Javadoc)
+     * @see com.nothome.delta.DiffWriter#flush()
+     */
     @Override
 	public void flush() throws IOException {
         System.err.println("FLUSH");
     }
+    
+    /* (non-Javadoc)
+     * @see com.nothome.delta.DiffWriter#close()
+     */
     @Override
 	public void close() throws IOException {
         System.err.println("CLOSE");

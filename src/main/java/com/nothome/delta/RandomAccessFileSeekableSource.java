@@ -36,11 +36,13 @@ import java.nio.ByteBuffer;
  */
 public class RandomAccessFileSeekableSource implements SeekableSource {
     
+    /** The raf. */
     private RandomAccessFile raf;
 
     /**
      * Constructs a new RandomAccessFileSeekableSource.
-     * @param raf
+     *
+     * @param raf the raf
      */
     public RandomAccessFileSeekableSource(RandomAccessFile raf) {
         if (raf == null)
@@ -48,24 +50,48 @@ public class RandomAccessFileSeekableSource implements SeekableSource {
         this.raf = raf;
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.SeekableSource#seek(long)
+     */
     @Override
 	public void seek(long pos) throws IOException {
         raf.seek(pos);
     }
 
+    /**
+     * Read.
+     *
+     * @param b the b
+     * @param off the off
+     * @param len the len
+     * @return the int
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public int read(byte[] b, int off, int len) throws IOException {
         return raf.read(b, off, len);
     }
 
+    /**
+     * Length.
+     *
+     * @return the long
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     public long length() throws IOException {
         return raf.length();
     }
 
+    /* (non-Javadoc)
+     * @see java.io.Closeable#close()
+     */
     @Override
 	public void close() throws IOException {
         raf.close();
     }
 
+    /* (non-Javadoc)
+     * @see com.nothome.delta.SeekableSource#read(java.nio.ByteBuffer)
+     */
     @Override
 	public int read(ByteBuffer bb) throws IOException {
         int c = raf.read(bb.array(), bb.position(), bb.remaining());

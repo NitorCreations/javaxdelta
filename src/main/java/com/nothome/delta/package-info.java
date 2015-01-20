@@ -2,9 +2,9 @@
  * This package contains classes for creating patches for binary files output
  * in the GDIFF format.
  * <p>
- * The patch creation class is {@link Delta}.
+ * The patch creation class is {@link com.nothome.delta.Delta}.
  * <p>
- * The patch applier class is {@link GDiffPatcher}.
+ * The patch applier class is {@link com.nothome.delta.GDiffPatcher}.
  * <p>
  * Example use:
  <pre>
@@ -19,7 +19,7 @@
  assert java.util.Arrays.equals(target, patchedSource);
  </pre>
  *
- * @see Delta
- * @see GDiffPatcher
+ * @see com.nothome.delta.Delta
+ * @see com.nothome.delta.GDiffPatcher
  */
 package com.nothome.delta;

@@ -53,21 +53,31 @@ import at.spardat.xma.xdelta.JarPatcher;
  */
 public class JarDeltaJarPatcherTest {
 
+    /** The random. */
     private SecureRandom random;
 
+    /** The byte max length. */
     private int byteMaxLength = 1000;
 
+    /** The entry max size. */
     private int entryMaxSize = 10;
 
+    /** The source file. */
     private File sourceFile; //das originale File
 
+    /** The target file. */
     private File targetFile; //die neue Generation
 
+    /** The patch file. */
     private File patchFile; //die Unterschiede
 
+    /** The result file. */
     private File resultFile; //das erechnete Result
 
 
+    /**
+     * Instantiates a new jar delta jar patcher test.
+     */
     public JarDeltaJarPatcherTest() {
         try {
             random = SecureRandom.getInstance("SHA1PRNG");
@@ -78,6 +88,11 @@ public class JarDeltaJarPatcherTest {
 
     }
 
+    /**
+     * Sets the up.
+     *
+     * @throws Exception the exception
+     */
     @Before
     public void setUp() throws Exception {
         sourceFile = File.createTempFile("JarDeltaJarPatcherTest_Source", ".zip");
@@ -93,15 +108,21 @@ public class JarDeltaJarPatcherTest {
         resultFile.deleteOnExit();
     }
 
+    /**
+     * Tear down.
+     *
+     * @throws Exception the exception
+     */
     @After
     public void tearDown() throws Exception {
         cleanUp();
     }
 
     /**
+     * Clean up.
      *
-     * @since version_number
      * @author S3460
+     * @since version_number
      */
     private void cleanUp() {
         if (sourceFile != null) {
@@ -120,7 +141,11 @@ public class JarDeltaJarPatcherTest {
 
     /**
      * Creates a zip file with random content.
+     *
      * @author S3460
+     * @param source the source
+     * @return the zip file
+     * @throws Exception the exception
      */
     private ZipFile makeSourceZipFile(File source) throws Exception {
 
@@ -148,7 +173,12 @@ public class JarDeltaJarPatcherTest {
 
     /**
      * Writes a modified version of zip_Source into target.
+     *
      * @author S3460
+     * @param zipSource the zip source
+     * @param target the target
+     * @return the zip file
+     * @throws Exception the exception
      */
     private ZipFile makeTargetZipFile(ZipFile zipSource, File target) throws Exception {
 
@@ -183,6 +213,10 @@ public class JarDeltaJarPatcherTest {
 
     /**
      * Copies a modified version of oldBytes into newBytes by mixing some bytes.
+     *
+     * @param oldBytes the old bytes
+     * @param newBytes the new bytes
+     * @return the byte[]
      */
     private byte[] mixBytes(byte[] oldBytes, byte[] newBytes) {
         byte[] bytes = new byte[oldBytes.length + newBytes.length];
@@ -215,7 +249,12 @@ public class JarDeltaJarPatcherTest {
 
     /**
      * Converts the given zip entry to a byte array.
+     *
      * @author S3460
+     * @param zipfile the zipfile
+     * @param entry the entry
+     * @return the byte[]
+     * @throws Exception the exception
      */
     private byte[] toBytes(ZipFile zipfile, ZipArchiveEntry entry) throws Exception {
         int entrySize = (int) entry.getSize();
@@ -230,7 +269,9 @@ public class JarDeltaJarPatcherTest {
 
     /**
      * Returns a byte array of random length filled with random bytes.
+     *
      * @author S3460
+     * @return the random bytes
      */
     private byte[] getRandomBytes() {
         int lengt = randomSize(byteMaxLength);
@@ -240,8 +281,11 @@ public class JarDeltaJarPatcherTest {
     }
 
     /**
-     * Returns a random integer <= maxSize
+     * Returns a random integer <= maxSize.
+     *
      * @author S3460
+     * @param maxSize the max size
+     * @return the int
      */
     private int randomSize(int maxSize) {
         return ((int) (maxSize * random.nextFloat())) + 1;
@@ -251,7 +295,11 @@ public class JarDeltaJarPatcherTest {
      * Compares the content of two zip files. The zip files are considered equal, if
      * the content of all zip entries is equal to the content of its corresponding entry
      * in the other zip file.
+     *
      * @author S3460
+     * @param zipSource the zip source
+     * @param resultZip the result zip
+     * @throws Exception the exception
      */
     private void compareFiles(ZipFile zipSource, ZipFile resultZip) throws Exception {
         boolean rc = false;
@@ -274,6 +322,14 @@ public class JarDeltaJarPatcherTest {
             resultZip.close();
         }
     }
+    
+    /**
+     * Equal.
+     *
+     * @param source the source
+     * @param target the target
+     * @return true, if successful
+     */
     public boolean equal(byte[] source,byte[]target) {
     	if(source.length!=target.length) return false;
     	for(int i=0;i<source.length;i++) {
@@ -285,11 +341,28 @@ public class JarDeltaJarPatcherTest {
     /**
      * Uses JarDelta to create a patch file and tests if JarPatcher correctly reconstructs
      * newZip using this patch file.
+     *
      * @author S3460
+     * @param originalName the original name
+     * @param targetName the target name
+     * @param originalZip the original zip
+     * @param newZip the new zip
+     * @throws Exception the exception
      */
     private void runJarPatcher(String originalName, String targetName, ZipFile originalZip, ZipFile newZip) throws Exception {
     	runJarPatcher(originalName, targetName, originalZip, newZip, true);
     }
+    
+    /**
+     * Run jar patcher.
+     *
+     * @param originalName the original name
+     * @param targetName the target name
+     * @param originalZip the original zip
+     * @param newZip the new zip
+     * @param comparefiles the comparefiles
+     * @throws Exception the exception
+     */
     private void runJarPatcher(String originalName, String targetName, ZipFile originalZip, ZipFile newZip, boolean comparefiles) throws Exception {
         try (ZipArchiveOutputStream output = new ZipArchiveOutputStream(new FileOutputStream(patchFile))) {
         	new JarDelta().computeDelta(originalName, targetName, originalZip, newZip, output);
@@ -311,6 +384,11 @@ public class JarDeltaJarPatcherTest {
         }
     }
 
+    /**
+     * Run jar patcher derived file.
+     *
+     * @throws Exception the exception
+     */
     private void runJarPatcherDerivedFile() throws Exception {
         ZipFile orginalZip = makeSourceZipFile(sourceFile);
         ZipFile derivedZip = makeTargetZipFile(orginalZip, targetFile);
@@ -318,12 +396,22 @@ public class JarDeltaJarPatcherTest {
         runJarPatcher(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), orginalZip, derivedZip);
     }
 
+    /**
+     * Run jar patcher complete differnt file.
+     *
+     * @throws Exception the exception
+     */
     private void runJarPatcherCompleteDifferntFile() throws Exception {
         ZipFile orginalZip = makeSourceZipFile(sourceFile);
         ZipFile derivedZip = makeSourceZipFile(targetFile);
         runJarPatcher(sourceFile.getAbsolutePath(), targetFile.getAbsolutePath(), orginalZip, derivedZip);
     }
 
+    /**
+     * Test jar patcher derived file.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testJarPatcherDerivedFile() throws Exception {
         //byteMaxLength = 10000;
@@ -331,6 +419,11 @@ public class JarDeltaJarPatcherTest {
         runJarPatcherDerivedFile();
     }
     
+    /**
+     * Test jar patcher derived file big.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testJarPatcherDerivedFileBig() throws Exception {
         byteMaxLength = 100000;
@@ -338,6 +431,11 @@ public class JarDeltaJarPatcherTest {
         runJarPatcherDerivedFile();
     }
 
+    /**
+     * No test jar patcher derived file very big.
+     *
+     * @throws Exception the exception
+     */
     @Ignore
     public void noTestJarPatcherDerivedFileVeryBig() throws Exception {
         byteMaxLength = 100000;
@@ -348,6 +446,11 @@ public class JarDeltaJarPatcherTest {
         }
     }
 
+    /**
+     * No test jar patcher derived file stressed.
+     *
+     * @throws Exception the exception
+     */
     @Ignore
     public void noTestJarPatcherDerivedFileStressed() throws Exception {
         byteMaxLength = 100000;
@@ -355,11 +458,21 @@ public class JarDeltaJarPatcherTest {
         runJarPatcherDerivedFile();
     }
 
+    /**
+     * Test jar patcher complete differnt file.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testJarPatcherCompleteDifferntFile() throws Exception {
         runJarPatcherCompleteDifferntFile();
     }
 
+    /**
+     * Test jar patcher complete differnt file big.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testJarPatcherCompleteDifferntFileBig() throws Exception {
         byteMaxLength = 10000;
@@ -369,12 +482,23 @@ public class JarDeltaJarPatcherTest {
     
     // Throws exception from patching if target and output crc:s don't match except for zip files, 
     // which may get different crc's due to different compression options
+    /**
+     * Test embedded zip.
+     *
+     * @throws Exception the exception
+     */
     @Test
     public void testEmbeddedZip() throws Exception {
     	String file1 = "src/test/resources/embedded1.zip";
     	String file2 = "src/test/resources/embedded2.zip";
     	runJarPatcher(file1, file2, new ZipFile(file1), new ZipFile(file2), false);
     }
+    
+    /**
+     * No test jar patcher complete differnt stressed.
+     *
+     * @throws Exception the exception
+     */
     @Ignore
     public void noTestJarPatcherCompleteDifferntStressed() throws Exception {
         byteMaxLength = 100000;
@@ -384,7 +508,9 @@ public class JarDeltaJarPatcherTest {
 
 
     /**
-     * Tests JarDelta and JarPatcher on two identical files
+     * Tests JarDelta and JarPatcher on two identical files.
+     *
+     * @throws Exception the exception
      */
     @Test
     public void testJarPatcherIdentFile() throws Exception {
@@ -409,7 +535,9 @@ public class JarDeltaJarPatcherTest {
     }
 
     /**
-     * Tests JarDelta and JarPatcher on two big identical files
+     * Tests JarDelta and JarPatcher on two big identical files.
+     *
+     * @throws Exception the exception
      */
     @Ignore
     public void noTestJarPatcherIdentFileBig() throws Exception {

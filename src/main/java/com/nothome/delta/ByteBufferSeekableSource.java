@@ -30,15 +30,20 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * Wraps a byte buffer as a source
+ * Wraps a byte buffer as a source.
  */
 public class ByteBufferSeekableSource implements SeekableSource {
     
+    /** The bb. */
     private ByteBuffer bb;
+    
+    /** The cur. */
     private ByteBuffer cur;
     
     /**
      * Constructs a new ByteArraySeekableSource.
+     *
+     * @param source the source
      */
     public ByteBufferSeekableSource(byte[] source) {
         this(ByteBuffer.wrap(source));
@@ -46,6 +51,8 @@ public class ByteBufferSeekableSource implements SeekableSource {
     
     /**
      * Constructs a new ByteArraySeekableSource.
+     *
+     * @param bb the bb
      */
     public ByteBufferSeekableSource(ByteBuffer bb) {
         if (bb == null)
@@ -59,6 +66,9 @@ public class ByteBufferSeekableSource implements SeekableSource {
         }
     }
     
+    /* (non-Javadoc)
+     * @see com.nothome.delta.SeekableSource#seek(long)
+     */
     @Override
 	public void seek(long pos) throws IOException {
         cur = bb.slice();
@@ -67,6 +77,9 @@ public class ByteBufferSeekableSource implements SeekableSource {
         cur.position((int) pos);
     }
     
+    /* (non-Javadoc)
+     * @see com.nothome.delta.SeekableSource#read(java.nio.ByteBuffer)
+     */
     @Override
 	public int read(ByteBuffer dest) throws IOException {
         if (!cur.hasRemaining())
@@ -79,6 +92,9 @@ public class ByteBufferSeekableSource implements SeekableSource {
         return c;
     }
     
+    /* (non-Javadoc)
+     * @see java.io.Closeable#close()
+     */
     @Override
 	public void close() throws IOException {
         bb = null;
@@ -87,6 +103,8 @@ public class ByteBufferSeekableSource implements SeekableSource {
 
     /**
      * Returns a debug <code>String</code>.
+     *
+     * @return the string
      */
     @Override
     public String toString()

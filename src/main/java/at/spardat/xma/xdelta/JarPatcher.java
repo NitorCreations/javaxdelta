@@ -51,26 +51,49 @@ import com.nothome.delta.PatchException;
  * @author s2877
  */
 public class JarPatcher {
+	
+	/** The patch name. */
 	private final String patchName;
+	
+	/** The source name. */
 	private final String sourceName;
+	
+	/** The buffer len. */
 	private final int BUFFER_LEN = 8 * 1024;
+	
+	/** The buffer. */
 	private final byte[] buffer = new byte[BUFFER_LEN];
+	
+	/** The next. */
 	private String next = null;
+	
 	/**
 	 * Applies the differences in patch to source to create the target file. All binary difference files
 	 * are applied to their corresponding file in source using {@link com.nothome.delta.GDiffPatcher}.
 	 * All other files listed in <code>META-INF/file.list</code> are copied from patch to output.
 	 *
-	 * @param source the original zip file, where the patches have to be applied
-	 * @param patch a zip file created by {@link JarDelta#computeDelta(ZipFile, ZipFile, ZipOutputStream)}
+	 * @param patch a zip file created by {@link JarDelta#computeDelta(String, String, ZipFile, ZipFile, ZipArchiveOutputStream)}
 	 *        containing the patches to apply
+	 * @param source the original zip file, where the patches have to be applied
 	 * @param output the patched zip file to create
+	 * @param list the list
 	 * @throws IOException if an error occures reading or writing any entry in a zip file
 	 */
 	public void applyDelta(ZipFile patch, ZipFile source, ZipArchiveOutputStream output, BufferedReader list) throws IOException {
 		applyDelta(patch, source, output, list, "");
 		patch.close();
 	}
+	
+	/**
+	 * Apply delta.
+	 *
+	 * @param patch the patch
+	 * @param source the source
+	 * @param output the output
+	 * @param list the list
+	 * @param prefix the prefix
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
 	public void applyDelta(ZipFile patch, ZipFile source, ZipArchiveOutputStream output, BufferedReader list, String prefix) throws IOException {
 		String fileName=null;
 		try {
@@ -185,12 +208,30 @@ public class JarPatcher {
 			output.close();
 		}
 	}
+	
+	/**
+	 * Gets the entry.
+	 *
+	 * @param source the source
+	 * @param name the name
+	 * @param crc the crc
+	 * @return the entry
+	 */
 	private ZipArchiveEntry getEntry(ZipFile source, String  name, long crc) {
 		for (ZipArchiveEntry next : source.getEntries(name)) {
 			if (next.getCrc() == crc) return next;
 		}
 		return null;
 	}
+	
+	/**
+	 * Gets the patch entry.
+	 *
+	 * @param source the source
+	 * @param name the name
+	 * @param crc the crc
+	 * @return the patch entry
+	 */
 	private ZipArchiveEntry getPatchEntry(ZipFile source, String  name, long crc) {
 		for (ZipArchiveEntry next : source.getEntries(name)) {
 			long nextCrc = Long.valueOf(next.getComment());
@@ -198,19 +239,39 @@ public class JarPatcher {
 		}
 		return null;
 	}
+	
+	/**
+	 * Close entry.
+	 *
+	 * @param output the output
+	 * @param outEntry the out entry
+	 * @param crc the crc
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
 	private void closeEntry(ZipArchiveOutputStream output, ZipArchiveEntry outEntry, long crc) throws IOException {
 		output.flush();
 		output.closeArchiveEntry();
 		if (outEntry.getCrc() != crc) throw new IOException("CRC mismatch for " + outEntry.getName());
 	}
+	
+	/**
+	 * Instantiates a new jar patcher.
+	 *
+	 * @param patchName the patch name
+	 * @param sourceName the source name
+	 */
 	public JarPatcher(String patchName, String sourceName) {
 		this.patchName = patchName;
 		this.sourceName = sourceName;
 	}
+	
 	/**
-	 * Main method to make {@link #applyDelta(ZipFile, ZipFile, ZipOutputStream)} available at
+	 * Main method to make {@link #applyDelta(ZipFile, ZipFile, ZipArchiveOutputStream, BufferedReader)} available at
 	 * the command line.<br>
 	 * usage JarPatcher source patch output
+	 *
+	 * @param args the arguments
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public static void main(String[] args) throws IOException {
 		String patchName=null;

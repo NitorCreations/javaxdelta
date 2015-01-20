@@ -38,11 +38,17 @@ import java.nio.CharBuffer;
  */
 public class TextPatcher {
 
+    /** The source. */
     private SeekableSource source;
+    
+    /** The buf. */
     private CharBuffer buf = CharBuffer.allocate(1024);
     
     /**
      * Constructs a new TextPatcher with a generic source.
+     *
+     * @param source the source
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public TextPatcher(SeekableSource source) throws IOException {
         if (source == null)
@@ -52,6 +58,8 @@ public class TextPatcher {
     
     /**
      * Constructs a new TextPatcher with a source to patch.
+     *
+     * @param source the source
      */
     public TextPatcher(CharSequence source) {
         this.source = new CharBufferSeekableSource(source);
@@ -59,6 +67,9 @@ public class TextPatcher {
     
     /**
      * Patch from a string, return the result.
+     *
+     * @param patch the patch
+     * @return the string
      */
     public String patch(CharSequence patch) {
         if (patch == null)
@@ -72,13 +83,22 @@ public class TextPatcher {
         }
     }
     
+    /**
+     * L.
+     *
+     * @param s the s
+     * @return the long
+     */
     private long l(String s) {
         return Long.parseLong(s, 16);
     }
     
     /**
      * Patches a source to an output file.
+     *
+     * @param patch the patch
      * @param out The output must be closed by the caller
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     public void patch(Reader patch, Writer out) throws IOException {
         if (patch == null)
@@ -122,6 +142,14 @@ public class TextPatcher {
         out.flush();
     }
     
+    /**
+     * Copy.
+     *
+     * @param source the source
+     * @param out the out
+     * @param length the length
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     private void copy(Readable source, Writer out, int length) throws IOException {
         while (length > 0) {
             if (buf.limit() > length)

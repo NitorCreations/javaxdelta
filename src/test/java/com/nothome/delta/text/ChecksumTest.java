@@ -11,13 +11,28 @@ import java.nio.CharBuffer;
 
 import org.junit.Test;
 
+/**
+ * The Class ChecksumTest.
+ */
 public class ChecksumTest {
 
+    /**
+     * For file.
+     *
+     * @param name the name
+     * @return the reader
+     * @throws FileNotFoundException the file not found exception
+     */
     Reader forFile(String name) throws FileNotFoundException {
         InputStreamReader isr = new InputStreamReader(getClass().getResourceAsStream(name));
         return new BufferedReader(isr);
     }
     
+    /**
+     * Test ver.
+     *
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
     @Test
     public void testVer() throws IOException {
         int d = Delta.DEFAULT_CHUNK_SIZE;
