@@ -209,7 +209,7 @@
                 <configuration>
                   <artifacts>
                     <artifact>
-                      <file>${project.build.directory}/jarxdelta.sh</file>
+                      <file>${project.build.directory}/javaxdelta.sh</file>
                       <type>sh</type>
                     </artifact>
                   </artifacts>
