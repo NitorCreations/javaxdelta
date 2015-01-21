@@ -41,11 +41,11 @@ export JXDELTA_HOME
 case $1 in
   delta)
   shift
-  exec $JAVA -Dsun.zip.disableMemoryMapping=true $DEBUG -cp $JXDELTA_JAR at.spardat.xma.xdelta.JarDelta "$@"
+  exec $JAVA $DEBUG -cp $JXDELTA_JAR at.spardat.xma.xdelta.JarDelta "$@"
   ;;
   patch)
   shift
-  EXTRA_ARGS="-Dsun.zip.disableMemoryMapping=true"
+  EXTRA_ARGS=""
   while [[ "$1" =~ ^-p ]]; do
     if [[ "$1" =~ ^-ps ]]; then
       EXTRA_ARGS="$EXTRA_ARGS -Dpatcher.ignoreSourcePathElements=$2"
