@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 import java.util.zip.ZipException;
-import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.compress.archivers.zip.ExtraFieldUtils;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
