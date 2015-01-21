@@ -32,7 +32,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.zip.ZipException;
 
+import org.apache.commons.compress.archivers.zip.ExtraFieldUtils;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
@@ -97,7 +99,7 @@ public class JarPatcher {
 		String fileName=null;
 		try {
 			for(fileName=(next == null ? list.readLine() : next);fileName!=null;
-			fileName=(next == null ? list.readLine() : next)) {
+					fileName=(next == null ? list.readLine() : next)) {
 				if (next != null) next = null;
 				if (!fileName.startsWith(prefix)) {
 					next = fileName;
@@ -105,8 +107,8 @@ public class JarPatcher {
 				}
 				int crcDelim = fileName.lastIndexOf(':');
 				int crcStart = fileName.lastIndexOf('|');
-				long crc = Long.valueOf(fileName.substring(crcStart + 1, crcDelim));
-				long crcSrc = Long.valueOf(fileName.substring(crcDelim + 1));
+				long crc = Long.valueOf(fileName.substring(crcStart + 1, crcDelim), 16);
+				long crcSrc = Long.valueOf(fileName.substring(crcDelim + 1), 16);
 				fileName = fileName.substring(prefix.length(), crcStart);
 				if("META-INF/file.list".equalsIgnoreCase(fileName)) continue;
 				if (fileName.contains("!")) {
@@ -124,7 +126,7 @@ public class JarPatcher {
 					}
 					applyDelta(patch, new ZipFile(originalFile), new ZipArchiveOutputStream(outputFile), list, prefix + embeds[0] + "!");
 					try (FileInputStream in = new FileInputStream(outputFile)) {
-						ZipArchiveEntry outEntry = new ZipArchiveEntry(original);
+						ZipArchiveEntry outEntry = copyEntry(original);
 						output.putArchiveEntry(outEntry);
 						int read = 0;
 						while (-1 < (read = in.read(buffer))) {
@@ -137,22 +139,17 @@ public class JarPatcher {
 					try {
 						ZipArchiveEntry patchEntry = getEntry(patch, prefix + fileName, crc);
 						if(patchEntry!=null) { // new Entry
-							if(patchEntry.isDirectory()) {
-								ZipArchiveEntry outputEntry = new ZipArchiveEntry(patchEntry);
-								output.putArchiveEntry(outputEntry);
-								closeEntry(output, outputEntry, crc);
-								continue;
-							} else {
+							ZipArchiveEntry outputEntry = JarDelta.entryToNewName(patchEntry, fileName);
+							output.putArchiveEntry(outputEntry);
+							if(!patchEntry.isDirectory()) {
 								try (InputStream in = patch.getInputStream(patchEntry)) {
-									ZipArchiveEntry outputEntry = new ZipArchiveEntry(patchEntry);
-									output.putArchiveEntry(outputEntry);
 									int read = 0;
 									while (-1 < (read = in.read(buffer))) {
 										output.write(buffer, 0, read);
 									}
-									closeEntry(output, outputEntry, crc);
 								}
 							}
+							closeEntry(output, outputEntry, crc);
 						} else {
 							ZipArchiveEntry sourceEntry = getEntry(source, fileName, crcSrc);
 							if(sourceEntry == null) {
@@ -177,6 +174,7 @@ public class JarPatcher {
 								GDiffPatcher diffPatcher = new GDiffPatcher();
 								diffPatcher.patch(sourceBytes,patchStream,output);
 								patchStream.close();
+								outputEntry.setCrc(crc);
 								closeEntry(output, outputEntry, crc);
 							} else { // unchanged Entry
 								ZipArchiveEntry outputEntry = new ZipArchiveEntry(sourceEntry);
@@ -199,8 +197,7 @@ public class JarPatcher {
 				}
 			}
 		} catch (Exception e) {
-			System.out.println(prefix + fileName);
-			e.printStackTrace();
+			System.err.println(prefix + fileName);
 			throw e;
 		} finally {
 			source.close();
@@ -220,7 +217,11 @@ public class JarPatcher {
 		for (ZipArchiveEntry next : source.getEntries(name)) {
 			if (next.getCrc() == crc) return next;
 		}
-		return null;
+		if (!JarDelta.zipFilesPattern.matcher(name).matches()) {
+			return null;
+		} else {
+			return source.getEntry(name);
+		}
 	}
 	
 	/**
@@ -239,6 +240,7 @@ public class JarPatcher {
 		return null;
 	}
 	
+
 	/**
 	 * Close entry.
 	 *
@@ -306,16 +308,61 @@ public class JarPatcher {
 		int ignoreSourcePaths = Integer.valueOf(System.getProperty("patcher.ignoreSourcePathElements", "0"));
 		int ignoreOutputPaths = Integer.valueOf(System.getProperty("patcher.ignoreOutputPathElements", "0"));
 		Path sourcePath = Paths.get(sourceName);
-		sourcePath = sourcePath.subpath(ignoreSourcePaths, sourcePath.getNameCount());
 		Path outputPath = Paths.get(outputName);
+		if (ignoreOutputPaths >= outputPath.getNameCount()) {
+			patch.close();
+			StringBuilder b = new StringBuilder()
+			 .append("Not enough path elements to ignore in output (")
+			 .append(ignoreOutputPaths) 
+			 .append(" in ")
+			 .append(outputName)
+			 .append(")");
+			throw new IOException(b.toString()); 
+		}
+		if (ignoreSourcePaths >= sourcePath.getNameCount()) {
+			patch.close();
+			StringBuilder b = new StringBuilder()
+			 .append("Not enough path elements to ignore in source (")
+			 .append(sourcePath) 
+			 .append(" in ")
+			 .append(sourceName)
+			 .append(")");
+			throw new IOException(b.toString()); 
+		}
+		sourcePath = sourcePath.subpath(ignoreSourcePaths, sourcePath.getNameCount());
 		outputPath = outputPath.subpath(ignoreOutputPaths, outputPath.getNameCount());
 		File sourceFile = sourcePath.toFile();
 		File outputFile = outputPath.toFile();
-		if (!(outputFile.getParentFile().mkdirs() || outputFile.getParentFile().exists())) {
+		if (!(outputFile.getAbsoluteFile().getParentFile().mkdirs() || outputFile.getAbsoluteFile().getParentFile().exists())) {
 			patch.close();
 			throw new IOException("Failed to create " + outputFile.getAbsolutePath());
 		}
 		new JarPatcher(patchName, sourceFile.getName()).applyDelta(patch, new ZipFile(sourceFile),new ZipArchiveOutputStream(new FileOutputStream(outputFile)), list);
 		list.close();
 	}
+
+	/**
+	 * Entry to new name.
+	 *
+	 * @param source the source
+	 * @param name the name
+	 * @return the zip archive entry
+	 * @throws ZipException the zip exception
+	 */
+	private ZipArchiveEntry copyEntry(ZipArchiveEntry source) throws ZipException {
+		ZipArchiveEntry ret = new ZipArchiveEntry(source.getName());
+	    byte[] extra = source.getExtra();
+	    if (extra != null) {
+	        ret.setExtraFields(ExtraFieldUtils.parse(extra, true,
+	                                             ExtraFieldUtils
+	                                             .UnparseableExtraField.READ));
+	    } else {
+	        ret.setExtra(ExtraFieldUtils.mergeLocalFileDataData(source.getExtraFields(true)));
+	    }
+	    ret.setInternalAttributes(source.getInternalAttributes());
+	    ret.setExternalAttributes(source.getExternalAttributes());
+	    ret.setExtraFields(source.getExtraFields(true));
+	    return ret;
+	}
+	
 }

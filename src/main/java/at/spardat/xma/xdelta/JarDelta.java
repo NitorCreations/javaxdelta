@@ -55,7 +55,7 @@ import com.nothome.delta.GDiffWriter;
 public class JarDelta {
 	
 	/** The Constant zipFilesPattern. */
-	private static final Pattern zipFilesPattern = Pattern.compile(".*?\\.zip$|.*?\\.jar$|.*?\\.war$|.*?\\.ear$", Pattern.CASE_INSENSITIVE);
+	public static final Pattern zipFilesPattern = Pattern.compile(".*?\\.zip$|.*?\\.jar$|.*?\\.war$|.*?\\.ear$", Pattern.CASE_INSENSITIVE);
 	
 	/** The Constant BUFFER_LEN. */
 	private static final int BUFFER_LEN = 8 * 1024;
@@ -116,9 +116,9 @@ public class JarDelta {
             	if (sourceEntry != null && targetEntry != null && zipFilesPattern.matcher(sourceEntry.getName()).matches() && !equal(sourceEntry, targetEntry)) {
             		nextEntryName += "!";
             	}
-            	nextEntryName += "|" + targetEntry.getCrc();
+            	nextEntryName += "|" + Long.toHexString(targetEntry.getCrc());
             	if (sourceEntry != null) {
-                	nextEntryName += ":" + sourceEntry.getCrc();
+                	nextEntryName += ":" + Long.toHexString(sourceEntry.getCrc());
             	} else {
             		nextEntryName += ":0"; 
             	}
@@ -277,7 +277,7 @@ public class JarDelta {
 	 * @return the zip archive entry
 	 * @throws ZipException the zip exception
 	 */
-	private ZipArchiveEntry entryToNewName(ZipArchiveEntry source, String name) throws ZipException {
+	public static ZipArchiveEntry entryToNewName(ZipArchiveEntry source, String name) throws ZipException {
 		if (source.getName().equals(name)) return new ZipArchiveEntry(source);
 		ZipArchiveEntry ret = new ZipArchiveEntry(name);
         byte[] extra = source.getExtra();
@@ -295,7 +295,5 @@ public class JarDelta {
         ret.setMethod(source.getMethod());
         ret.setSize(source.getSize());
         return ret;
-
-		
 	}
 }
