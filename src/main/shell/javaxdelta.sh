@@ -16,6 +16,7 @@ if [ -z "$JXDELTA_HOME" ]; then
   JXDELTA_HOME=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd -P)
 fi
 
+
 mkdir -p $JXDELTA_HOME/lib
 if [ ! -d $JXDELTA_HOME/lib ]; then
   echo "Failed to create javaxdelta lib directory"
@@ -23,7 +24,7 @@ if [ ! -d $JXDELTA_HOME/lib ]; then
 fi
 
 JXDELTA_JAR=$JXDELTA_HOME/lib/$MD5.jar
-tail -n+%%ARCHIVE_START%% $0 > $JXDELTA_JAR
+flock "$JXDELTA_HOME/lib/" bash -c "if ! [ -r \"$JXDELTA_JAR\" ]; then tail -n+%%ARCHIVE_START%% \"${BASH_SOURCE[0]}\" > \"$JXDELTA_JAR\"; fi"
 
 if [ -z "$JAVA_HOME" ]; then
   if ! which java > /dev/null; then
@@ -40,11 +41,11 @@ export JXDELTA_HOME
 case $1 in
   delta)
   shift
-  exec $JAVA $DEBUG -cp $JXDELTA_JAR at.spardat.xma.xdelta.JarDelta "$@"
+  exec $JAVA -Dsun.zip.disableMemoryMapping=true $DEBUG -cp $JXDELTA_JAR at.spardat.xma.xdelta.JarDelta "$@"
   ;;
   patch)
   shift
-  EXTRA_ARGS=""
+  EXTRA_ARGS="-Dsun.zip.disableMemoryMapping=true"
   while [[ "$1" =~ ^-p ]]; do
     if [[ "$1" =~ ^-ps ]]; then
       EXTRA_ARGS="$EXTRA_ARGS -Dpatcher.ignoreSourcePathElements=$2"
