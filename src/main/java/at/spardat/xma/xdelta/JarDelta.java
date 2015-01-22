@@ -146,27 +146,27 @@ public class JarDelta {
                 	} else {
                 		if(!equal(sourceEntry,targetEntry)) {
                 			if (zipFilesPattern.matcher(sourceEntry.getName()).matches()) {
+                				File embeddedTarget = File.createTempFile("jardelta-tmp", ".zip");
                 				File embeddedSource = File.createTempFile("jardelta-tmp", ".zip");
                 				try (FileOutputStream out = new FileOutputStream(embeddedSource); 
-                						InputStream in = source.getInputStream(sourceEntry)) {
+                						InputStream in = source.getInputStream(sourceEntry);
+                						FileOutputStream out2 = new FileOutputStream(embeddedTarget); 
+                						InputStream in2 = target.getInputStream(targetEntry)) {
                 					int read = 0;
                 					while (-1 < (read = in.read(buffer))) {
                 						out.write(buffer, 0, read);
                 					}
                 					out.flush();
-                				}
-                				File embeddedTarget = File.createTempFile("jardelta-tmp", ".zip");
-                				try (FileOutputStream out = new FileOutputStream(embeddedTarget); 
-                						InputStream in = target.getInputStream(targetEntry)) {
-                					int read = 0;
-                					while (-1 < (read = in.read(buffer))) {
-                						out.write(buffer, 0, read);
+                					read = 0;
+                					while (-1 < (read = in2.read(buffer))) {
+                						out2.write(buffer, 0, read);
                 					}
-                					out.flush();
+                					out2.flush();
+                    				computeDelta(new ZipFile(embeddedSource), new ZipFile(embeddedTarget), output, list, prefix + sourceEntry.getName() + "!");
+                				} finally {
+                					embeddedSource.delete();
+                					embeddedTarget.delete();
                 				}
-                				computeDelta(new ZipFile(embeddedSource), new ZipFile(embeddedTarget), output, list, prefix + sourceEntry.getName() + "!");
-                				embeddedSource.delete();
-                				embeddedTarget.delete();
                 			} else {
                 				ZipArchiveEntry outputEntry = new ZipArchiveEntry(prefix + targetEntry.getName()+".gdiff");
                 				outputEntry.setTime(targetEntry.getTime());

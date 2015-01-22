@@ -114,8 +114,9 @@ public class JarPatcher {
 				if (fileName.contains("!")) {
 					String[] embeds = fileName.split("\\!");
 					ZipArchiveEntry original = getEntry(source, embeds[0], crcSrc);
-					File originalFile = File.createTempFile("jardelta-tmp", ".zip");
-					File outputFile = File.createTempFile("jardelta-tmp", ".zip");
+					File originalFile = File.createTempFile("jardelta-tmp-origin-", ".zip");
+					File outputFile = File.createTempFile("jardelta-tmp-output-", ".zip");
+					Exception thrown = null;
 					try (FileOutputStream out = new FileOutputStream(originalFile);
 							InputStream in = source.getInputStream(original)) { 
 						int read = 0;
@@ -123,17 +124,26 @@ public class JarPatcher {
 							out.write(buffer, 0, read);
 						}
 						out.flush();
-					}
 					applyDelta(patch, new ZipFile(originalFile), new ZipArchiveOutputStream(outputFile), list, prefix + embeds[0] + "!");
-					try (FileInputStream in = new FileInputStream(outputFile)) {
-						ZipArchiveEntry outEntry = copyEntry(original);
-						output.putArchiveEntry(outEntry);
-						int read = 0;
-						while (-1 < (read = in.read(buffer))) {
-							output.write(buffer, 0, read);
+					} catch (Exception e) {
+						thrown = e;
+						throw e;
+					} finally {
+						originalFile.delete();
+						try (FileInputStream in = new FileInputStream(outputFile)) {
+							if (thrown == null) {
+								ZipArchiveEntry outEntry = copyEntry(original);
+								output.putArchiveEntry(outEntry);
+								int read = 0;
+								while (-1 < (read = in.read(buffer))) {
+									output.write(buffer, 0, read);
+								}
+								output.flush();
+								output.closeArchiveEntry();
+							}
+						} finally {
+							outputFile.delete();
 						}
-						output.flush();
-						output.closeArchiveEntry();
 					}
 				} else {
 					try {
