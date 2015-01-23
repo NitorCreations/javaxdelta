@@ -23,7 +23,6 @@
  * IN THE SOFTWARE.
  *
  */
-
 package com.nothome.delta;
 
 import java.io.IOException;
@@ -33,86 +32,79 @@ import java.nio.ByteBuffer;
  * Wraps a byte buffer as a source.
  */
 public class ByteBufferSeekableSource implements SeekableSource {
-    
-    /** The bb. */
-    private ByteBuffer bb;
-    
-    /** The cur. */
-    private ByteBuffer cur;
-    
-    /**
-     * Constructs a new ByteArraySeekableSource.
-     *
-     * @param source the source
-     */
-    public ByteBufferSeekableSource(byte[] source) {
-        this(ByteBuffer.wrap(source));
-    }
-    
-    /**
-     * Constructs a new ByteArraySeekableSource.
-     *
-     * @param bb the bb
-     */
-    public ByteBufferSeekableSource(ByteBuffer bb) {
-        if (bb == null)
-            throw new NullPointerException("bb");
-        this.bb = bb;
-        bb.rewind();
-        try {
-            seek(0);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    
-    /* (non-Javadoc)
-     * @see com.nothome.delta.SeekableSource#seek(long)
-     */
-    @Override
-	public void seek(long pos) throws IOException {
-        cur = bb.slice();
-        if (pos > cur.limit())
-            throw new IOException("pos " + pos + " cannot seek " + cur.limit());
-        cur.position((int) pos);
-    }
-    
-    /* (non-Javadoc)
-     * @see com.nothome.delta.SeekableSource#read(java.nio.ByteBuffer)
-     */
-    @Override
-	public int read(ByteBuffer dest) throws IOException {
-        if (!cur.hasRemaining())
-            return -1;
-        int c = 0;
-        while (cur.hasRemaining() && dest.hasRemaining()) {
-            dest.put(cur.get());
-            c++;
-        }
-        return c;
-    }
-    
-    /* (non-Javadoc)
-     * @see java.io.Closeable#close()
-     */
-    @Override
-	public void close() throws IOException {
-        bb = null;
-        cur = null;
-    }
+  /** The bb. */
+  private ByteBuffer bb;
+  /** The cur. */
+  private ByteBuffer cur;
 
-    /**
-     * Returns a debug <code>String</code>.
-     *
-     * @return the string
-     */
-    @Override
-    public String toString()
-    {
-        return "BBSeekable" +
-            " bb=" + this.bb.position() + "-" + bb.limit() +
-            " cur=" + this.cur.position() + "-" + cur.limit() +
-            "";
+  /**
+   * Constructs a new ByteArraySeekableSource.
+   *
+   * @param source the source
+   */
+  public ByteBufferSeekableSource(byte[] source) {
+    this(ByteBuffer.wrap(source));
+  }
+
+  /**
+   * Constructs a new ByteArraySeekableSource.
+   *
+   * @param bb the bb
+   */
+  public ByteBufferSeekableSource(ByteBuffer bb) {
+    if (bb == null)
+      throw new NullPointerException("bb");
+    this.bb = bb;
+    bb.rewind();
+    try {
+      seek(0);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
-    
+  }
+
+  /* (non-Javadoc)
+   * @see com.nothome.delta.SeekableSource#seek(long)
+   */
+  @Override
+  public void seek(long pos) throws IOException {
+    cur = bb.slice();
+    if (pos > cur.limit())
+      throw new IOException("pos " + pos + " cannot seek " + cur.limit());
+    cur.position((int) pos);
+  }
+
+  /* (non-Javadoc)
+   * @see com.nothome.delta.SeekableSource#read(java.nio.ByteBuffer)
+   */
+  @Override
+  public int read(ByteBuffer dest) throws IOException {
+    if (!cur.hasRemaining())
+      return -1;
+    int c = 0;
+    while (cur.hasRemaining() && dest.hasRemaining()) {
+      dest.put(cur.get());
+      c++;
+    }
+    return c;
+  }
+
+  /* (non-Javadoc)
+   * @see java.io.Closeable#close()
+   */
+  @Override
+  public void close() throws IOException {
+    bb = null;
+    cur = null;
+  }
+
+  /**
+   * Returns a debug <code>String</code>.
+   *
+   * @return the string
+   */
+  @Override
+  public String toString() {
+    return "BBSeekable" + " bb=" + this.bb.position() + "-" + bb.limit() + " cur=" + this.cur.position() + "-" + cur.limit() + "";
+  }
 }

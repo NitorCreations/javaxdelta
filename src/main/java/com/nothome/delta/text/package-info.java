@@ -12,10 +12,10 @@
  String target = ...;
  Delta d = new Delta();
  String patch = d.compute(source, target);
- 
+
  TextPatcher p = new TextPatcher(source);
  String patchedSource = p.patch(patch);
- 
+
  assert target.equals(patchedSource);
  </pre>
  *

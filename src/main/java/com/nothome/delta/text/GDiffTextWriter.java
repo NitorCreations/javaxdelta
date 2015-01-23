@@ -21,7 +21,6 @@
  * IN THE SOFTWARE.
  *
  */
-
 package com.nothome.delta.text;
 
 import java.io.CharArrayWriter;
@@ -58,122 +57,113 @@ import java.io.Writer;
  * http://www.w3.org/TR/NOTE-gdiff-19970901.html.
  */
 public class GDiffTextWriter implements DiffTextWriter {
+  /**
+   * Line feed character.
+   */
+  public static final char LF = '\n';
+  /**
+   * Copy command character.
+   */
+  public static final char COPY = 'y';
+  /**
+   * Data command character.
+   */
+  public static final char DATA = 'i';
+  /**
+   * Comma delimiter.
+   */
+  public static final char COMMA = ',';
+  /** The Constant GDT. */
+  static final String GDT = "gdt";
+  /** The caw. */
+  private CharArrayWriter caw = new CharArrayWriter();
+  /** The w. */
+  private Writer w = null;
+  /**
+   * Max length of a "text-chunk".
+   * Although this could be arbitrarily large, this caps
+   * the buffer size, facilitating reading. 
+   */
+  public static final int CHUNK_SIZE = 32 * 1024;
 
-    /**
-     * Line feed character.
-     */
-    public static final char LF = '\n';
-    
-    /**
-     * Copy command character.
-     */
-    public static final char COPY = 'y';
-    
-    /**
-     * Data command character.
-     */
-    public static final char DATA = 'i';
-    
-    /**
-     * Comma delimiter.
-     */
-    public static final char COMMA = ',';
+  /**
+   * Constructs a new GDiffTextWriter.
+   *
+   * @param w the w
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public GDiffTextWriter(Writer w) throws IOException {
+    if (w == null)
+      throw new NullPointerException("w");
+    this.w = w;
+    w.write(GDT);
+    w.write(LF);
+  }
 
-    /** The Constant GDT. */
-    static final String GDT = "gdt";
-    
-    /** The caw. */
-    private CharArrayWriter caw = new CharArrayWriter();
+  /**
+   * D.
+   *
+   * @param i the i
+   * @return the string
+   */
+  private String d(int i) {
+    return Integer.toHexString(i);
+  }
 
-    /** The w. */
-    private Writer w = null;
-    
-    /**
-     * Max length of a "text-chunk".
-     * Although this could be arbitrarily large, this caps
-     * the buffer size, facilitating reading. 
-     */
-    public static final int CHUNK_SIZE = 32 * 1024;
+  /* (non-Javadoc)
+   * @see com.nothome.delta.text.DiffTextWriter#addCopy(int, int)
+   */
+  @Override
+  public void addCopy(int offset, int length) throws IOException {
+    writeBuf();
+    w.write(COPY);
+    w.write(d(offset));
+    w.write(COMMA);
+    w.write(d(length));
+    w.write(LF);
+  }
 
-    /**
-     * Constructs a new GDiffTextWriter.
-     *
-     * @param w the w
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public GDiffTextWriter(Writer w) throws IOException {
-        if (w == null)
-            throw new NullPointerException("w");
-        this.w = w;
-        w.write(GDT);
-        w.write(LF);
-    }
+  /* (non-Javadoc)
+   * @see com.nothome.delta.text.DiffTextWriter#addData(char)
+   */
+  @Override
+  public void addData(char c) throws IOException {
+    caw.append(c);
+    if (caw.size() > CHUNK_SIZE)
+      flush();
+  }
 
-    /**
-     * D.
-     *
-     * @param i the i
-     * @return the string
-     */
-    private String d(int i) {
-        return Integer.toHexString(i);
-    }
+  /**
+   * Write buf.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  private void writeBuf() throws IOException {
+    if (caw.size() == 0)
+      return;
+    w.write(DATA);
+    w.write(d(caw.size()));
+    w.write(LF);
+    caw.writeTo(w);
+    caw.reset();
+    w.write(LF);
+  }
 
-    /* (non-Javadoc)
-     * @see com.nothome.delta.text.DiffTextWriter#addCopy(int, int)
-     */
-    @Override
-	public void addCopy(int offset, int length) throws IOException {
-        writeBuf();
-        w.write(COPY);
-        w.write(d(offset));
-        w.write(COMMA);
-        w.write(d(length));
-        w.write(LF);
-    }
+  /* (non-Javadoc)
+   * @see com.nothome.delta.text.DiffTextWriter#flush()
+   */
+  @Override
+  public void flush() throws IOException {
+    writeBuf();
+    w.flush();
+  }
 
-    /* (non-Javadoc)
-     * @see com.nothome.delta.text.DiffTextWriter#addData(char)
-     */
-    @Override
-	public void addData(char c) throws IOException {
-        caw.append(c);
-        if (caw.size() > CHUNK_SIZE)
-            flush();
-    }
-
-    /**
-     * Write buf.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    private void writeBuf() throws IOException {
-        if (caw.size() == 0)
-            return;
-        w.write(DATA);
-        w.write(d(caw.size()));
-        w.write(LF);
-        caw.writeTo(w);
-        caw.reset();
-        w.write(LF);
-    }
-
-    /* (non-Javadoc)
-     * @see com.nothome.delta.text.DiffTextWriter#flush()
-     */
-    @Override
-	public void flush() throws IOException {
-        writeBuf();
-        w.flush();
-    }
-
-    /* (non-Javadoc)
-     * @see com.nothome.delta.text.DiffTextWriter#close()
-     */
-    @Override
-	public void close() throws IOException {
-        flush();
-        w.close();
-    }
-
+  /* (non-Javadoc)
+   * @see com.nothome.delta.text.DiffTextWriter#close()
+   */
+  @Override
+  public void close() throws IOException {
+    flush();
+    w.close();
+  }
 }

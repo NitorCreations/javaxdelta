@@ -23,7 +23,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-
 package com.nothome.delta;
 
 import static org.junit.Assert.assertEquals;
@@ -37,40 +36,39 @@ import org.junit.Test;
  * Tests {@link Checksum}.
  */
 public class ChecksumTest {
+  /** The s. */
+  String s = "abcdefghijklmnopqrstuvwyxz012345679";
 
-    /** The s. */
-    String s = "abcdefghijklmnopqrstuvwyxz012345679";
-    
-    /**
-     * Test check.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testCheck() throws IOException {
-       testCheck(16);
-       testCheck(4); 
-       testCheck(10); 
-    }
-    
-    /**
-     * Test check.
-     *
-     * @param chunk the chunk
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public void testCheck(int chunk) throws IOException {
-        byte[] bytes = s.getBytes("ASCII");
-        ByteBufferSeekableSource source = new ByteBufferSeekableSource(bytes);
-        Checksum checksum = new Checksum(source, chunk);
-        ByteBuffer bb = ByteBuffer.wrap(bytes);
-        long hash = Checksum.queryChecksum(bb, chunk);
-        assertEquals(0, checksum.findChecksumIndex(hash));
-        bb.position(chunk);
-        long hash2 = Checksum.queryChecksum(bb, chunk);
-        assertEquals(1, checksum.findChecksumIndex(hash2));
-        for (int i = 0; i < chunk; i++)
-            hash = Checksum.incrementChecksum(hash, bb.get(bb.position() - chunk), bb.get(), chunk);
-        assertEquals(hash2, hash);
-    }
+  /**
+   * Test check.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testCheck() throws IOException {
+    testCheck(16);
+    testCheck(4);
+    testCheck(10);
+  }
+
+  /**
+   * Test check.
+   *
+   * @param chunk the chunk
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public void testCheck(int chunk) throws IOException {
+    byte[] bytes = s.getBytes("ASCII");
+    ByteBufferSeekableSource source = new ByteBufferSeekableSource(bytes);
+    Checksum checksum = new Checksum(source, chunk);
+    ByteBuffer bb = ByteBuffer.wrap(bytes);
+    long hash = Checksum.queryChecksum(bb, chunk);
+    assertEquals(0, checksum.findChecksumIndex(hash));
+    bb.position(chunk);
+    long hash2 = Checksum.queryChecksum(bb, chunk);
+    assertEquals(1, checksum.findChecksumIndex(hash2));
+    for (int i = 0; i < chunk; i++)
+      hash = Checksum.incrementChecksum(hash, bb.get(bb.position() - chunk), bb.get(), chunk);
+    assertEquals(hash2, hash);
+  }
 }

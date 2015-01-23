@@ -22,7 +22,6 @@
  * IN THE SOFTWARE.
  *
  */
-
 package com.nothome.delta;
 
 import static com.nothome.delta.GDiffWriter.COPY_INT_INT;
@@ -58,230 +57,207 @@ import java.nio.ByteBuffer;
  * <a href="http://www.w3.org/TR/NOTE-gdiff-19970901.html">NOTE-gdiff-19970901</a>.
  */
 public class GDiffPatcher {
-    
-    /** The buf. */
-    private ByteBuffer buf = ByteBuffer.allocate(1024);
-    
-    /** The buf2. */
-    private byte buf2[] = buf.array();
+  /** The buf. */
+  private ByteBuffer buf = ByteBuffer.allocate(1024);
+  /** The buf2. */
+  private byte buf2[] = buf.array();
 
-    /**
-     * Constructs a new GDiffPatcher.
-     */
-    public GDiffPatcher() {
+  /**
+   * Constructs a new GDiffPatcher.
+   */
+  public GDiffPatcher() {}
+
+  /**
+   * Patches to an output file.
+   *
+   * @param sourceFile the source file
+   * @param patchFile the patch file
+   * @param outputFile the output file
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public void patch(File sourceFile, File patchFile, File outputFile) throws IOException {
+    RandomAccessFileSeekableSource source = new RandomAccessFileSeekableSource(new RandomAccessFile(sourceFile, "r"));
+    InputStream patch = new FileInputStream(patchFile);
+    OutputStream output = new FileOutputStream(outputFile);
+    try {
+      patch(source, patch, output);
+    } catch (IOException e) {
+      throw e;
+    } finally {
+      source.close();
+      patch.close();
+      output.close();
     }
-    
-    /**
-     * Patches to an output file.
-     *
-     * @param sourceFile the source file
-     * @param patchFile the patch file
-     * @param outputFile the output file
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public void patch(File sourceFile, File patchFile, File outputFile)
-		throws IOException
-	{
-        RandomAccessFileSeekableSource source =new RandomAccessFileSeekableSource(new RandomAccessFile(sourceFile, "r")); 
-        InputStream patch = new FileInputStream(patchFile);
-        OutputStream output = new FileOutputStream(outputFile);
-        try {
-            patch(source, patch, output);
-        } catch (IOException e) {
-            throw e;
-        } finally {
-            source.close();
-            patch.close();
-            output.close();
-        }
+  }
+
+  /**
+   * Patches to an output stream.
+   *
+   * @param source the source
+   * @param patch the patch
+   * @param output the output
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public void patch(byte[] source, InputStream patch, OutputStream output) throws IOException {
+    patch(new ByteBufferSeekableSource(source), patch, output);
+  }
+
+  /**
+   * Patches in memory, returning the patch result.
+   *
+   * @param source the source
+   * @param patch the patch
+   * @return the byte[]
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public byte[] patch(byte[] source, byte[] patch) throws IOException {
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    patch(source, new ByteArrayInputStream(patch), os);
+    return os.toByteArray();
+  }
+
+  /**
+   * Patches to an output stream.
+   *
+   * @param source the source
+   * @param patch the patch
+   * @param out the out
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public void patch(SeekableSource source, InputStream patch, OutputStream out) throws IOException {
+    DataOutputStream outOS = new DataOutputStream(out);
+    DataInputStream patchIS = new DataInputStream(patch);
+    // the magic string is 'd1 ff d1 ff' + the version number
+    if (patchIS.readUnsignedByte() != 0xd1 || patchIS.readUnsignedByte() != 0xff || patchIS.readUnsignedByte() != 0xd1 || patchIS.readUnsignedByte() != 0xff || patchIS.readUnsignedByte() != 0x04) {
+      throw new PatchException("magic string not found, aborting!");
     }
-    
-    /**
-     * Patches to an output stream.
-     *
-     * @param source the source
-     * @param patch the patch
-     * @param output the output
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public void patch(byte[] source, InputStream patch, OutputStream output) throws IOException {
-        patch(new ByteBufferSeekableSource(source), patch, output);
+    while (true) {
+      int command = patchIS.readUnsignedByte();
+      if (command == EOF)
+        break;
+      int length;
+      int offset;
+      if (command <= DATA_MAX) {
+        append(command, patchIS, outOS);
+        continue;
+      }
+      switch (command) {
+        case DATA_USHORT: // ushort, n bytes following; append
+          length = patchIS.readUnsignedShort();
+          append(length, patchIS, outOS);
+          break;
+        case DATA_INT: // int, n bytes following; append
+          length = patchIS.readInt();
+          append(length, patchIS, outOS);
+          break;
+        case COPY_USHORT_UBYTE:
+          offset = patchIS.readUnsignedShort();
+          length = patchIS.readUnsignedByte();
+          copy(offset, length, source, outOS);
+          break;
+        case COPY_USHORT_USHORT:
+          offset = patchIS.readUnsignedShort();
+          length = patchIS.readUnsignedShort();
+          copy(offset, length, source, outOS);
+          break;
+        case COPY_USHORT_INT:
+          offset = patchIS.readUnsignedShort();
+          length = patchIS.readInt();
+          copy(offset, length, source, outOS);
+          break;
+        case COPY_INT_UBYTE:
+          offset = patchIS.readInt();
+          length = patchIS.readUnsignedByte();
+          copy(offset, length, source, outOS);
+          break;
+        case COPY_INT_USHORT:
+          offset = patchIS.readInt();
+          length = patchIS.readUnsignedShort();
+          copy(offset, length, source, outOS);
+          break;
+        case COPY_INT_INT:
+          offset = patchIS.readInt();
+          length = patchIS.readInt();
+          copy(offset, length, source, outOS);
+          break;
+        case COPY_LONG_INT:
+          long loffset = patchIS.readLong();
+          length = patchIS.readInt();
+          copy(loffset, length, source, outOS);
+          break;
+        default:
+          throw new IllegalStateException("command " + command);
+      }
     }
-    
-    /**
-     * Patches in memory, returning the patch result.
-     *
-     * @param source the source
-     * @param patch the patch
-     * @return the byte[]
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public byte[] patch(byte[] source, byte[] patch) throws IOException {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        patch(source, new ByteArrayInputStream(patch), os);
-        return os.toByteArray();
+    outOS.flush();
+  }
+
+  /**
+   * Copy.
+   *
+   * @param offset the offset
+   * @param length the length
+   * @param source the source
+   * @param output the output
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  private void copy(long offset, int length, SeekableSource source, OutputStream output) throws IOException {
+    source.seek(offset);
+    while (length > 0) {
+      int len = Math.min(buf.capacity(), length);
+      buf.clear().limit(len);
+      int res = source.read(buf);
+      if (res == -1)
+        throw new EOFException("in copy " + offset + " " + length);
+      output.write(buf.array(), 0, res);
+      length -= res;
     }
-    
-    /**
-     * Patches to an output stream.
-     *
-     * @param source the source
-     * @param patch the patch
-     * @param out the out
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public void patch(SeekableSource source, InputStream patch, OutputStream out) throws IOException {
-        
-        DataOutputStream outOS = new DataOutputStream(out);
-        DataInputStream patchIS = new DataInputStream(patch);
+  }
 
-        // the magic string is 'd1 ff d1 ff' + the version number
-        if (patchIS.readUnsignedByte() != 0xd1 ||
-                patchIS.readUnsignedByte() != 0xff ||
-                patchIS.readUnsignedByte() != 0xd1 ||
-                patchIS.readUnsignedByte() != 0xff ||
-                patchIS.readUnsignedByte() != 0x04) {
-
-            throw new PatchException("magic string not found, aborting!");
-        }
-
-        while (true) {
-            int command = patchIS.readUnsignedByte();
-            if (command == EOF)
-                break;
-            int length;
-            int offset;
-            
-            if (command <= DATA_MAX) {
-                append(command, patchIS, outOS);
-                continue;
-            }
-            
-            switch (command) {
-            case DATA_USHORT: // ushort, n bytes following; append
-                length = patchIS.readUnsignedShort();
-                append(length, patchIS, outOS);
-                break;
-            case DATA_INT: // int, n bytes following; append
-                length = patchIS.readInt();
-                append(length, patchIS, outOS);
-                break;
-            case COPY_USHORT_UBYTE:
-                offset = patchIS.readUnsignedShort();
-                length = patchIS.readUnsignedByte();
-                copy(offset, length, source, outOS);
-                break;
-            case COPY_USHORT_USHORT:
-                offset = patchIS.readUnsignedShort();
-                length = patchIS.readUnsignedShort();
-                copy(offset, length, source, outOS);
-                break;
-            case COPY_USHORT_INT:
-                offset = patchIS.readUnsignedShort();
-                length = patchIS.readInt();
-                copy(offset, length, source, outOS);
-                break;
-            case COPY_INT_UBYTE:
-                offset = patchIS.readInt();
-                length = patchIS.readUnsignedByte();
-                copy(offset, length, source, outOS);
-                break;
-            case COPY_INT_USHORT:
-                offset = patchIS.readInt();
-                length = patchIS.readUnsignedShort();
-                copy(offset, length, source, outOS);
-                break;
-            case COPY_INT_INT:
-                offset = patchIS.readInt();
-                length = patchIS.readInt();
-                copy(offset, length, source, outOS);
-                break;
-            case COPY_LONG_INT:
-                long loffset = patchIS.readLong();
-                length = patchIS.readInt();
-                copy(loffset, length, source, outOS);
-                break;
-            default: 
-                throw new IllegalStateException("command " + command);
-            }
-        }
-		outOS.flush();
+  /**
+   * Append.
+   *
+   * @param length the length
+   * @param patch the patch
+   * @param output the output
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  private void append(int length, InputStream patch, OutputStream output) throws IOException {
+    while (length > 0) {
+      int len = Math.min(buf2.length, length);
+      int res = patch.read(buf2, 0, len);
+      if (res == -1)
+        throw new EOFException("cannot read " + length);
+      output.write(buf2, 0, res);
+      length -= res;
     }
+  }
 
-    /**
-     * Copy.
-     *
-     * @param offset the offset
-     * @param length the length
-     * @param source the source
-     * @param output the output
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    private void copy(long offset, int length, SeekableSource source, OutputStream output)
-		throws IOException
-	{
-        source.seek(offset);
-        while (length > 0) {
-            int len = Math.min(buf.capacity(), length);
-            buf.clear().limit(len);
-            int res = source.read(buf);
-            if (res == -1)
-                throw new EOFException("in copy " + offset + " " + length);
-            output.write(buf.array(), 0, res);
-            length -= res;
-        }
+  /**
+   * Simple command line tool to patch a file.
+   *
+   * @param argv the arguments
+   */
+  public static void main(String argv[]) {
+    if (argv.length != 3) {
+      System.err.println("usage GDiffPatch source patch output");
+      System.err.println("aborting..");
+      return;
     }
-
-    /**
-     * Append.
-     *
-     * @param length the length
-     * @param patch the patch
-     * @param output the output
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    private void append(int length, InputStream patch, OutputStream output) throws IOException {
-        while (length > 0) {
-            int len = Math.min(buf2.length, length);
-    	    int res = patch.read(buf2, 0, len);
-    	    if (res == -1)
-    	        throw new EOFException("cannot read " + length);
-            output.write(buf2, 0, res);
-            length -= res;
-        }
+    try {
+      File sourceFile = new File(argv[0]);
+      File patchFile = new File(argv[1]);
+      File outputFile = new File(argv[2]);
+      if (sourceFile.length() > Integer.MAX_VALUE || patchFile.length() > Integer.MAX_VALUE) {
+        System.err.println("source or patch is too large, max length is " + Integer.MAX_VALUE);
+        System.err.println("aborting..");
+        return;
+      }
+      GDiffPatcher patcher = new GDiffPatcher();
+      patcher.patch(sourceFile, patchFile, outputFile);
+      System.out.println("finished patching file");
+    } catch (Exception ioe) { //gls031504a
+      System.err.println("error while patching: " + ioe);
     }
-
-    /**
-     * Simple command line tool to patch a file.
-     *
-     * @param argv the arguments
-     */
-    public static void main(String argv[]) {
-
-        if (argv.length != 3) {
-            System.err.println("usage GDiffPatch source patch output");
-            System.err.println("aborting..");
-            return;
-        }
-        try {
-            File sourceFile = new File(argv[0]);
-            File patchFile = new File(argv[1]);
-            File outputFile = new File(argv[2]);
-
-            if (sourceFile.length() > Integer.MAX_VALUE ||
-            patchFile.length() > Integer.MAX_VALUE) {
-                System.err.println("source or patch is too large, max length is " + Integer.MAX_VALUE);
-                System.err.println("aborting..");
-                return;
-            }
-            GDiffPatcher patcher = new GDiffPatcher();
-            patcher.patch(sourceFile, patchFile, outputFile);
-
-            System.out.println("finished patching file");
-
-        } catch (Exception ioe) {                                   //gls031504a
-            System.err.println("error while patching: " + ioe);
-        }
-    }
+  }
 }
-

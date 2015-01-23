@@ -22,9 +22,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-
 package com.nothome.delta.text;
-
 
 import java.io.IOException;
 import java.nio.CharBuffer;
@@ -34,119 +32,114 @@ import java.util.HashMap;
  * Checksum that uses character streams.
  */
 public class Checksum {
-    
-    /** The debug. */
-    public static boolean debug = false;
-    
-    /** The checksums. */
-    protected HashMap<Long, Integer> checksums = new HashMap<Long, Integer>();
-    
-    /** The Constant single_hash. */
-    private static final char[] single_hash = com.nothome.delta.Checksum.getSingleHash();
-    
-    /**
-     * Initialize checksums for source. The checksum for the <code>chunkSize</code> bytes at offset
-     * <code>chunkSize</code> * i is inserted into an array at index i.
-     *
-     * @param source the source
-     * @param chunkSize the chunk size
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public Checksum(Readable source, int chunkSize) throws IOException {
-        CharBuffer bb = CharBuffer.allocate(chunkSize * 2);
-        int count = 0;
-        while (true) {
-            source.read(bb);
-            bb.flip();
-            if (bb.remaining() < chunkSize)
-                break;
-            while (bb.remaining() >= chunkSize) {
-                long queryChecksum = queryChecksum0(bb, chunkSize);
-                checksums.put(queryChecksum, count++);
-            }
-            bb.compact();
-        }
-    }
-    
-    /**
-     * Marks, gets, then resets the checksum computed from the buffer.
-     *
-     * @param bb the bb
-     * @param len the len
-     * @return the long
-     */
-    public static long queryChecksum(CharBuffer bb, int len) {
-        bb.mark();
-        long sum = queryChecksum0(bb, len);
-        bb.reset();
-        return sum;
-    }
-    
-    /**
-     * B.
-     *
-     * @param c the c
-     * @return the byte
-     */
-    private static byte b(char c) {
-        return (byte)c;
-    }
-    
-    /**
-     * Query checksum0.
-     *
-     * @param bb the bb
-     * @param len the len
-     * @return the long
-     */
-    private static long queryChecksum0(CharBuffer bb, int len) {
-        int high = 0; int low = 0;
-        for (int i = 0; i < len; i++) {
-            low += single_hash[b(bb.get())+128];
-            high += low;
-        }
-        return ((high & 0xffff) << 16) | (low & 0xffff);
-    }
-    
-    /**
-     * Increment checksum.
-     *
-     * @param checksum the checksum
-     * @param out the out
-     * @param in the in
-     * @param chunkSize the chunk size
-     * @return the long
-     */
-    public static long incrementChecksum(long checksum, char out, char in, int chunkSize) {
-        char old_c = single_hash[b(out)+128];
-        char new_c = single_hash[b(in)+128];
-        int low   = ((int)((checksum) & 0xffff) - old_c + new_c) & 0xffff;
-        int high  = ((int)((checksum) >> 16) - (old_c * chunkSize) + low) & 0xffff;
-        return (high << 16) | (low & 0xffff);
-    }
-    
-    /**
-     * Find checksum index.
-     *
-     * @param hashf the hashf
-     * @return the int
-     */
-    public int findChecksumIndex(long hashf) {
-        if (!checksums.containsKey(hashf))
-            return -1;
-        return checksums.get(hashf);
-    }
+  /** The debug. */
+  public static boolean debug = false;
+  /** The checksums. */
+  protected HashMap<Long, Integer> checksums = new HashMap<Long, Integer>();
+  /** The Constant single_hash. */
+  private static final char[] single_hash = com.nothome.delta.Checksum.getSingleHash();
 
-    /**
-     * Returns a debug <code>String</code>.
-     *
-     * @return the string
-     */
-    @Override
-    public String toString()
-    {
-        return super.toString() + " checksums=" + this.checksums;
+  /**
+   * Initialize checksums for source. The checksum for the <code>chunkSize</code> bytes at offset
+   * <code>chunkSize</code> * i is inserted into an array at index i.
+   *
+   * @param source the source
+   * @param chunkSize the chunk size
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public Checksum(Readable source, int chunkSize) throws IOException {
+    CharBuffer bb = CharBuffer.allocate(chunkSize * 2);
+    int count = 0;
+    while (true) {
+      source.read(bb);
+      bb.flip();
+      if (bb.remaining() < chunkSize)
+        break;
+      while (bb.remaining() >= chunkSize) {
+        long queryChecksum = queryChecksum0(bb, chunkSize);
+        checksums.put(queryChecksum, count++);
+      }
+      bb.compact();
     }
-    
-    
+  }
+
+  /**
+   * Marks, gets, then resets the checksum computed from the buffer.
+   *
+   * @param bb the bb
+   * @param len the len
+   * @return the long
+   */
+  public static long queryChecksum(CharBuffer bb, int len) {
+    bb.mark();
+    long sum = queryChecksum0(bb, len);
+    bb.reset();
+    return sum;
+  }
+
+  /**
+   * B.
+   *
+   * @param c the c
+   * @return the byte
+   */
+  private static byte b(char c) {
+    return (byte) c;
+  }
+
+  /**
+   * Query checksum0.
+   *
+   * @param bb the bb
+   * @param len the len
+   * @return the long
+   */
+  private static long queryChecksum0(CharBuffer bb, int len) {
+    int high = 0;
+    int low = 0;
+    for (int i = 0; i < len; i++) {
+      low += single_hash[b(bb.get()) + 128];
+      high += low;
+    }
+    return ((high & 0xffff) << 16) | (low & 0xffff);
+  }
+
+  /**
+   * Increment checksum.
+   *
+   * @param checksum the checksum
+   * @param out the out
+   * @param in the in
+   * @param chunkSize the chunk size
+   * @return the long
+   */
+  public static long incrementChecksum(long checksum, char out, char in, int chunkSize) {
+    char old_c = single_hash[b(out) + 128];
+    char new_c = single_hash[b(in) + 128];
+    int low = ((int) ((checksum) & 0xffff) - old_c + new_c) & 0xffff;
+    int high = ((int) ((checksum) >> 16) - (old_c * chunkSize) + low) & 0xffff;
+    return (high << 16) | (low & 0xffff);
+  }
+
+  /**
+   * Find checksum index.
+   *
+   * @param hashf the hashf
+   * @return the int
+   */
+  public int findChecksumIndex(long hashf) {
+    if (!checksums.containsKey(hashf))
+      return -1;
+    return checksums.get(hashf);
+  }
+
+  /**
+   * Returns a debug <code>String</code>.
+   *
+   * @return the string
+   */
+  @Override
+  public String toString() {
+    return super.toString() + " checksums=" + this.checksums;
+  }
 }

@@ -29,67 +29,60 @@ import org.junit.Test;
  * that reproduce the problem. 
  */
 public class BinaryDiffChunk6Test {
+  /**
+   * Read fully.
+   *
+   * @param fileName the file name
+   * @return the byte[]
+   * @throws Exception the exception
+   */
+  public byte[] readFully(String fileName) throws Exception {
+    System.out.println("looking for: " + fileName);
+    RandomAccessFile raf = new RandomAccessFile(new File("target/test-classes/" + fileName), "r");
+    byte[] data = new byte[(int) raf.length()];
+    raf.readFully(data);
+    raf.close();
+    return data;
+  }
 
-    /**
-     * Read fully.
-     *
-     * @param fileName the file name
-     * @return the byte[]
-     * @throws Exception the exception
-     */
-    public byte[] readFully(String fileName) throws Exception {
-        System.out.println("looking for: " + fileName);
-        RandomAccessFile raf = new RandomAccessFile(new File("target/test-classes/"
-                + fileName),
-                "r");
-        byte[] data = new byte[(int) raf.length()];
-        raf.readFully(data);
-        raf.close();
-        return data;
+  /**
+   * Test it.
+   *
+   * @throws Exception the exception
+   */
+  @Test
+  public void testIt() throws Exception {
+    String o1 = "obj1.bin";
+    String o2 = "obj2.bin";
+    byte[] b1 = readFully(o1);
+    byte[] b2 = readFully(o2);
+    System.out.println(" b1 = " + b1.length);
+    System.out.println(" b2 = " + b2.length);
+    Delta delta = new Delta();
+    delta.setChunkSize(6);
+    byte[] patch = delta.compute(b1, b2);
+    System.out.println(" patch = " + patch.length);
+    assertTrue(patch.length > 1);
+    GDiffPatcher patcher = new GDiffPatcher();
+    byte[] patched_b1 = patcher.patch(b1, patch);
+    assertTrue("files should have same length", b2.length == patched_b1.length);
+    assertTrue("patched_b1 content should be identical to content b2 ", compareOriginals(b2, patched_b1));
+  }
+
+  /**
+   * Compare originals.
+   *
+   * @param b2 the b2
+   * @param patched_b1 the patched_b1
+   * @return true if identical
+   */
+  private boolean compareOriginals(byte[] b2, byte[] patched_b1) {
+    for (int i = 0; i < b2.length; i++) {
+      if (b2[i] != patched_b1[i]) {
+        System.out.println("difference detected in position " + i);
+        return false;
+      }
     }
-
-    /**
-     * Test it.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testIt() throws Exception {
-        String o1 = "obj1.bin";
-        String o2 = "obj2.bin";
-
-        byte[] b1 = readFully(o1);
-        byte[] b2 = readFully(o2);
-        System.out.println(" b1 = " + b1.length);
-        System.out.println(" b2 = " + b2.length);
-        Delta delta = new Delta();
-        delta.setChunkSize(6);
-        byte[] patch = delta.compute(b1, b2);
-        System.out.println(" patch = " + patch.length);
-        assertTrue(patch.length > 1);
-
-        GDiffPatcher patcher = new GDiffPatcher();
-        byte[] patched_b1 = patcher.patch(b1, patch);
-        assertTrue("files should have same length", b2.length == patched_b1.length);
-        assertTrue("patched_b1 content should be identical to content b2 ",
-                compareOriginals(b2, patched_b1));
-    }
-
-    /**
-     * Compare originals.
-     *
-     * @param b2 the b2
-     * @param patched_b1 the patched_b1
-     * @return true if identical
-     */
-    private boolean compareOriginals(byte[] b2, byte[] patched_b1) {
-        for (int i = 0; i < b2.length; i++) {
-            if (b2[i] != patched_b1[i]) {
-                System.out.println("difference detected in position " + i);
-                return false;
-            }
-        }
-        return true;
-    }
-
+    return true;
+  }
 }

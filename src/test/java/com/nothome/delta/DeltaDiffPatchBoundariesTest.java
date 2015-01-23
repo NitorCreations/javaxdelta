@@ -23,7 +23,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-
 package com.nothome.delta;
 
 import static org.junit.Assert.assertEquals;
@@ -46,162 +45,148 @@ import org.junit.Test;
  * @author Stefan Liebig
  */
 public class DeltaDiffPatchBoundariesTest {
+  /**
+   * Test case1.
+   *
+   * @throws Exception the exception
+   */
+  @Test
+  public void testCase1() throws Exception {
+    run("0123456789abcdef", "0123456789abcdef");
+  }
 
-    /**
-     * Test case1.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testCase1() throws Exception {
-        run("0123456789abcdef", "0123456789abcdef");
+  /**
+   * Test case2.
+   *
+   * @throws Exception the exception
+   */
+  @Test
+  public void testCase2() throws Exception {
+    run("0123456789abcdef", "0123456789abcdef+");
+  }
+
+  /**
+   * Test case3.
+   *
+   * @throws Exception the exception
+   */
+  @Test
+  public void testCase3() throws Exception {
+    run("0123456789abcdef0", "0123456789abcdef0+");
+  }
+
+  /**
+   * Test case4.
+   *
+   * @throws Exception the exception
+   */
+  @Test
+  public void testCase4() throws Exception {
+    run("0123456789abcdef0123456789abcdef", "0123456789abcdef0123456789abcdef+");
+  }
+
+  /**
+   * Test case4b.
+   *
+   * @throws Exception the exception
+   */
+  @Test
+  public void testCase4b() throws Exception {
+    String a = "aaaaaaaaaaaaaaaa";
+    String x = "xxxxxxxxxxxxxxxx";
+    run(a + x, x + a);
+  }
+
+  /**
+   * Test case5.
+   *
+   * @throws Exception the exception
+   */
+  @Test
+  public void testCase5() throws Exception {
+    run("0123456789abcdef0123456789abcdef", "0123456789abcdef");
+  }
+
+  /**
+   * Test case6.
+   *
+   * @throws Exception the exception
+   */
+  @Test
+  public void testCase6() throws Exception {
+    run("Seite reserviert. Hier soll demnächst etwas über mich stehen.", "Seite reserviert. Hier soll demnächst etwas über mich stehen. (Test der Umlaute)");
+    // / 0123456789123456789
+  }
+
+  /**
+   * Test short.
+   *
+   * @throws Exception the exception
+   */
+  @Test
+  public void testShort() throws Exception {
+    run("0123456789abcdef", "0123456789");
+    run("0123456789", "0123456789abcdef");
+  }
+
+  /**
+   * Run.
+   *
+   * @param string1 the string1
+   * @param string2 the string2
+   * @throws Exception the exception
+   */
+  private void run(String string1, String string2) throws Exception {
+    File test1File = new File("test1.txt");
+    File test2File = new File("test2.txt");
+    OutputStream os = new FileOutputStream(test1File);
+    os.write(string1.getBytes());
+    os.close();
+    os = new FileOutputStream(test2File);
+    os.write(string2.getBytes());
+    os.close();
+    File patchedFile = new File("patchedFile.txt");
+    File deltaFile = new File("delta");
+    try {
+      DiffWriter output = new GDiffWriter(new DataOutputStream(new BufferedOutputStream(new FileOutputStream(deltaFile))));
+      Delta d = new Delta();
+      d.compute(test1File, test2File, output);
+      assertTrue(deltaFile.exists());
+      System.out.println(fmt(DeltaPatchTest.read(deltaFile)));
+      GDiffPatcher diffPatcher = new GDiffPatcher();
+      diffPatcher.patch(test1File, deltaFile, patchedFile);
+      assertTrue(patchedFile.exists());
+      assertEquals(string2.getBytes().length, patchedFile.length());
+      byte[] buf = new byte[string2.getBytes().length];
+      FileInputStream is = new FileInputStream(patchedFile);
+      is.read(buf);
+      is.close();
+      String got = new String(buf);
+      assertEquals(string2, got);
+    } finally {
+      test1File.delete();
+      test2File.delete();
+      deltaFile.delete();
+      patchedFile.delete();
     }
+  }
 
-    /**
-     * Test case2.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testCase2() throws Exception {
-        run("0123456789abcdef", "0123456789abcdef+");
+  /**
+   * Fmt.
+   *
+   * @param read the read
+   * @return the string
+   */
+  private String fmt(ByteArrayOutputStream read) {
+    byte[] b = read.toByteArray();
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < b.length; i++) {
+      int b1 = b[i] & 0xFF;
+      if (b1 < 32 || b1 > 127)
+        sb.append("|" + b1 + "|");
+      else
+        sb.append((char) b1);
     }
-
-    /**
-     * Test case3.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testCase3() throws Exception {
-        run("0123456789abcdef0", "0123456789abcdef0+");
-    }
-
-    /**
-     * Test case4.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testCase4() throws Exception {
-        run("0123456789abcdef0123456789abcdef",
-                "0123456789abcdef0123456789abcdef+");
-    }
-
-    /**
-     * Test case4b.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testCase4b() throws Exception {
-        String a = "aaaaaaaaaaaaaaaa";
-        String x = "xxxxxxxxxxxxxxxx";
-        run(a + x, x + a);
-    }
-
-    /**
-     * Test case5.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testCase5() throws Exception {
-        run("0123456789abcdef0123456789abcdef", "0123456789abcdef");
-    }
-
-    /**
-     * Test case6.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testCase6() throws Exception {
-        run(
-                "Seite reserviert. Hier soll demnächst etwas über mich stehen.",
-                "Seite reserviert. Hier soll demnächst etwas über mich stehen. (Test der Umlaute)");
-        // / 0123456789123456789
-    }
-
-    /**
-     * Test short.
-     *
-     * @throws Exception the exception
-     */
-    @Test
-    public void testShort() throws Exception {
-        run("0123456789abcdef", "0123456789");
-        run("0123456789", "0123456789abcdef");
-    }
-
-    /**
-     * Run.
-     *
-     * @param string1 the string1
-     * @param string2 the string2
-     * @throws Exception the exception
-     */
-    private void run(String string1, String string2) throws Exception {
-        File test1File = new File("test1.txt");
-        File test2File = new File("test2.txt");
-
-        OutputStream os = new FileOutputStream(test1File);
-        os.write(string1.getBytes());
-        os.close();
-        os = new FileOutputStream(test2File);
-        os.write(string2.getBytes());
-        os.close();
-
-        File patchedFile = new File("patchedFile.txt");
-        File deltaFile = new File("delta");
-
-        try {
-            DiffWriter output = new GDiffWriter(new DataOutputStream(
-                    new BufferedOutputStream(new FileOutputStream(deltaFile))));
-            Delta d = new Delta();
-            d.compute(test1File, test2File, output);
-
-            assertTrue(deltaFile.exists());
-
-            System.out.println(fmt(DeltaPatchTest.read(deltaFile)));
-
-            GDiffPatcher diffPatcher = new GDiffPatcher();
-            diffPatcher.patch(test1File, deltaFile, patchedFile);
-            assertTrue(patchedFile.exists());
-
-            assertEquals((long) string2.getBytes().length, patchedFile.length());
-            byte[] buf = new byte[string2.getBytes().length];
-            FileInputStream is = new FileInputStream(patchedFile);
-            is.read(buf);
-            is.close();
-
-            String got = new String(buf);
-            assertEquals(string2, got);
-        } finally {
-            test1File.delete();
-            test2File.delete();
-            deltaFile.delete();
-            patchedFile.delete();
-        }
-    }
-
-    /**
-     * Fmt.
-     *
-     * @param read the read
-     * @return the string
-     */
-    private String fmt(ByteArrayOutputStream read) {
-        byte[] b = read.toByteArray();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < b.length; i++) {
-            int b1 = b[i] & 0xFF;
-            if (b1 < 32 || b1 > 127)
-                sb.append("|" + b1 + "|");
-            else
-                sb.append((char) b1);
-        }
-        return sb.toString();
-    }
-
+    return sb.toString();
+  }
 }

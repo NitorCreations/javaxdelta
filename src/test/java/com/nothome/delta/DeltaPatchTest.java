@@ -23,7 +23,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-
 package com.nothome.delta;
 
 import static org.junit.Assert.assertEquals;
@@ -46,262 +45,251 @@ import org.junit.Test;
  * Tests {@link Delta} and {@link GDiffPatcher}.
  */
 public class DeltaPatchTest {
+  /** The test1 file. */
+  private File test1File;
+  /** The test2 file. */
+  private File test2File;
+  /** The chunk size. */
+  private int chunkSize;
 
-    /** The test1 file. */
-    private File test1File;
-    
-    /** The test2 file. */
-    private File test2File;
-    
-    /** The chunk size. */
-    private int chunkSize;
-    
-    /**
-     * Read.
-     *
-     * @param f the f
-     * @return the byte array output stream
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    static ByteArrayOutputStream read(File f) throws IOException {
-        FileInputStream fis = new FileInputStream(f);
-        try {
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            while (true) {
-                int r = fis.read();
-                if (r == -1) break;
-                os.write(r);
-            }
-            return os;
-        } finally {
-            fis.close();
-        }
+  /**
+   * Read.
+   *
+   * @param f the f
+   * @return the byte array output stream
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  static ByteArrayOutputStream read(File f) throws IOException {
+    FileInputStream fis = new FileInputStream(f);
+    try {
+      ByteArrayOutputStream os = new ByteArrayOutputStream();
+      while (true) {
+        int r = fis.read();
+        if (r == -1)
+          break;
+        os.write(r);
+      }
+      return os;
+    } finally {
+      fis.close();
     }
+  }
 
-    /**
-     * Sets the up.
-     *
-     * @throws Exception the exception
-     */
-    @Before
-    public void setUp() throws Exception {
-        chunkSize = Delta.DEFAULT_CHUNK_SIZE;
-    }
+  /**
+   * Sets the up.
+   *
+   * @throws Exception the exception
+   */
+  @Before
+  public void setUp() throws Exception {
+    chunkSize = Delta.DEFAULT_CHUNK_SIZE;
+  }
 
-    /**
-     * Tear down.
-     *
-     * @throws Exception the exception
-     */
-    @After
-    public void tearDown() throws Exception {
-        (new File("delta")).delete();
-    }
+  /**
+   * Tear down.
+   *
+   * @throws Exception the exception
+   */
+  @After
+  public void tearDown() throws Exception {
+    (new File("delta")).delete();
+  }
 
-    /**
-     * Test lorem.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testLorem() throws IOException {
-        use("lorem.txt", "lorem2.txt");
-        doTest();
-    }
-    
-    /**
-     * Test lorem2.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testLorem2() throws IOException {
-        use("lorem2.txt", "lorem.txt");
-        doTest();
-    }
-        
-    /**
-     * Test lorem22.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testLorem22() throws IOException {
-        use("lorem2.txt", "lorem2.txt");
-        doTest();
-    }
-        
-    /**
-     * Test lorem long.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testLoremLong() throws IOException {
-        use("lorem-long.txt", "lorem-long2.txt");
-        // doTest();
-        chunkSize = 8;
-        doTest();
-    }
-    
-    /**
-     * Test lorem long2.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testLoremLong2() throws IOException {
-        use("lorem-long2.txt", "lorem-long.txt");
-        doTest();
-    }
-    
-    /**
-     * Test lorem long3.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testLoremLong3() throws IOException {
-        use("lorem-long.txt", "lorem-long3.txt");
-        doTest();
-        chunkSize = 14;
-        doTest();
-    }
-    
-    /**
-     * Test ver.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testVer() throws IOException {
-        use("ver1.txt", "ver2.txt");
-        doTest();
-    }
-        
-    /**
-     * Test ver34.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testVer34() throws IOException {
-        use("ver3.txt", "ver4.txt");
-        doTest();
-    }
-        
-    /**
-     * Test ver21.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testVer21() throws IOException {
-        use("ver2.txt", "ver1.txt");
-        doTest();
-    }
-        
-    /**
-     * Test min bug.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testMinBug() throws IOException {
-        use("min1.bin", "min2.bin");
-        doTest();
-        chunkSize = 14;
-        doTest();
-    }
-    
-    /**
-     * Test obj12.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    @Test
-    public void testObj12() throws IOException {
-        use("obj1.bin", "obj2.bin");
-        doTest();
-        chunkSize = 14;
-        doTest();
-    }
-    
-    /**
-     * Do test.
-     *
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    private void doTest() throws IOException {
-        File patchedFile = new File("patchedFile.txt");
-        File delta = new File("delta");
-        DiffWriter output = new GDiffWriter(new DataOutputStream(
-                new BufferedOutputStream(new FileOutputStream(delta))));
-        Delta d = new Delta();
-        d.setChunkSize(chunkSize);
-        d.compute(test1File, test2File, output);
+  /**
+   * Test lorem.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testLorem() throws IOException {
+    use("lorem.txt", "lorem2.txt");
+    doTest();
+  }
 
-        assertTrue(delta.exists());
+  /**
+   * Test lorem2.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testLorem2() throws IOException {
+    use("lorem2.txt", "lorem.txt");
+    doTest();
+  }
 
-        System.out.println("delta length " + delta.length() + " for " + test1File + " " + test2File);
-        System.out.println(toString(read(delta).toByteArray()));
-        System.out.println("end patch");
+  /**
+   * Test lorem22.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testLorem22() throws IOException {
+    use("lorem2.txt", "lorem2.txt");
+    doTest();
+  }
 
-        GDiffPatcher diffPatcher = new GDiffPatcher();
-        diffPatcher.patch(test1File, delta, patchedFile);
-        assertTrue(patchedFile.exists());
+  /**
+   * Test lorem long.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testLoremLong() throws IOException {
+    use("lorem-long.txt", "lorem-long2.txt");
+    // doTest();
+    chunkSize = 8;
+    doTest();
+  }
 
-        assertEquals("file length", test2File.length(), patchedFile.length());
-        byte[] buf = new byte[(int) test2File.length()];
-        FileInputStream is = new FileInputStream(patchedFile);
-        is.read(buf);
-        is.close();
-        patchedFile.delete();
+  /**
+   * Test lorem long2.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testLoremLong2() throws IOException {
+    use("lorem-long2.txt", "lorem-long.txt");
+    doTest();
+  }
 
-        assertEquals(new String(buf), read(test2File).toString());
+  /**
+   * Test lorem long3.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testLoremLong3() throws IOException {
+    use("lorem-long.txt", "lorem-long3.txt");
+    doTest();
+    chunkSize = 14;
+    doTest();
+  }
+
+  /**
+   * Test ver.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testVer() throws IOException {
+    use("ver1.txt", "ver2.txt");
+    doTest();
+  }
+
+  /**
+   * Test ver34.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testVer34() throws IOException {
+    use("ver3.txt", "ver4.txt");
+    doTest();
+  }
+
+  /**
+   * Test ver21.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testVer21() throws IOException {
+    use("ver2.txt", "ver1.txt");
+    doTest();
+  }
+
+  /**
+   * Test min bug.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testMinBug() throws IOException {
+    use("min1.bin", "min2.bin");
+    doTest();
+    chunkSize = 14;
+    doTest();
+  }
+
+  /**
+   * Test obj12.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  @Test
+  public void testObj12() throws IOException {
+    use("obj1.bin", "obj2.bin");
+    doTest();
+    chunkSize = 14;
+    doTest();
+  }
+
+  /**
+   * Do test.
+   *
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  private void doTest() throws IOException {
+    File patchedFile = new File("patchedFile.txt");
+    File delta = new File("delta");
+    DiffWriter output = new GDiffWriter(new DataOutputStream(new BufferedOutputStream(new FileOutputStream(delta))));
+    Delta d = new Delta();
+    d.setChunkSize(chunkSize);
+    d.compute(test1File, test2File, output);
+    assertTrue(delta.exists());
+    System.out.println("delta length " + delta.length() + " for " + test1File + " " + test2File);
+    System.out.println(toString(read(delta).toByteArray()));
+    System.out.println("end patch");
+    GDiffPatcher diffPatcher = new GDiffPatcher();
+    diffPatcher.patch(test1File, delta, patchedFile);
+    assertTrue(patchedFile.exists());
+    assertEquals("file length", test2File.length(), patchedFile.length());
+    byte[] buf = new byte[(int) test2File.length()];
+    FileInputStream is = new FileInputStream(patchedFile);
+    is.read(buf);
+    is.close();
+    patchedFile.delete();
+    assertEquals(new String(buf), read(test2File).toString());
+  }
+
+  /**
+   * Use.
+   *
+   * @param f1 the f1
+   * @param f2 the f2
+   */
+  private void use(String f1, String f2) {
+    URL l1 = getClass().getClassLoader().getResource(f1);
+    URL l2 = getClass().getClassLoader().getResource(f2);
+    test1File = new File(l1.getPath());
+    test2File = new File(l2.getPath());
+  }
+
+  /**
+   * Append.
+   *
+   * @param sb the sb
+   * @param value the value
+   */
+  private static void append(StringBuffer sb, int value) {
+    char b1 = (char) ((value >> 4) & 0x0F);
+    char b2 = (char) ((value) & 0x0F);
+    sb.append(Character.forDigit(b1, 16));
+    sb.append(Character.forDigit(b2, 16));
+  }
+
+  /**
+   * Return the data as a series of hex values.
+   *
+   * @param buffer the buffer
+   * @return the string
+   */
+  public String toString(byte buffer[]) {
+    int length = buffer.length;
+    StringBuffer sb = new StringBuffer(length * 2);
+    for (int i = 0; i < length; i++) {
+      append(sb, buffer[i]);
     }
-
-    /**
-     * Use.
-     *
-     * @param f1 the f1
-     * @param f2 the f2
-     */
-    private void use(String f1, String f2) {
-        URL l1 = getClass().getClassLoader().getResource(f1);
-        URL l2 = getClass().getClassLoader().getResource(f2);
-        test1File = new File(l1.getPath());
-        test2File = new File(l2.getPath());
-    }
-
-    /**
-     * Append.
-     *
-     * @param sb the sb
-     * @param value the value
-     */
-    private static void append(StringBuffer sb, int value) {
-        char b1 = (char)((value >> 4) & 0x0F);
-        char b2 = (char)((value) & 0x0F);
-        sb.append( Character.forDigit(b1, 16) );
-        sb.append( Character.forDigit(b2, 16) );
-    }
-
-    /**
-     * Return the data as a series of hex values.
-     *
-     * @param buffer the buffer
-     * @return the string
-     */
-    public String toString(byte buffer[])
-    {
-        int length = buffer.length;
-        StringBuffer sb = new StringBuffer(length * 2);
-        for (int i=0; i<length; i++) {
-            append(sb, buffer[i]);
-        }
-        return sb.toString();
-    }
-
-
+    return sb.toString();
+  }
 }

@@ -21,7 +21,6 @@
  * IN THE SOFTWARE.
  *
  */
-
 package com.nothome.delta.text;
 
 import java.io.BufferedReader;
@@ -37,131 +36,127 @@ import java.nio.CharBuffer;
  * Converts a text patch and source file to a resulting target file.
  */
 public class TextPatcher {
+  /** The source. */
+  private SeekableSource source;
+  /** The buf. */
+  private CharBuffer buf = CharBuffer.allocate(1024);
 
-    /** The source. */
-    private SeekableSource source;
-    
-    /** The buf. */
-    private CharBuffer buf = CharBuffer.allocate(1024);
-    
-    /**
-     * Constructs a new TextPatcher with a generic source.
-     *
-     * @param source the source
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public TextPatcher(SeekableSource source) throws IOException {
-        if (source == null)
-            throw new NullPointerException("source");
-        this.source = source;
-    }
-    
-    /**
-     * Constructs a new TextPatcher with a source to patch.
-     *
-     * @param source the source
-     */
-    public TextPatcher(CharSequence source) {
-        this.source = new CharBufferSeekableSource(source);
-    }
-    
-    /**
-     * Patch from a string, return the result.
-     *
-     * @param patch the patch
-     * @return the string
-     */
-    public String patch(CharSequence patch) {
-        if (patch == null)
-            throw new NullPointerException("patch");
-        StringWriter sw = new StringWriter();
-        try {
-            patch(new StringReader(patch.toString()), sw);
-            return sw.toString();
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Invalid patch: " + e, e);
-        }
-    }
-    
-    /**
-     * L.
-     *
-     * @param s the s
-     * @return the long
-     */
-    private long l(String s) {
-        return Long.parseLong(s, 16);
-    }
-    
-    /**
-     * Patches a source to an output file.
-     *
-     * @param patch the patch
-     * @param out The output must be closed by the caller
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public void patch(Reader patch, Writer out) throws IOException {
-        if (patch == null)
-            throw new NullPointerException("patch");
-        if (out == null)
-            throw new NullPointerException("out");
-        BufferedReader br;
-        if (patch instanceof BufferedReader)
-            br = (BufferedReader) patch;
-        else
-            br = new BufferedReader(patch);
-        String header = br.readLine();
-        if (header == null)
-            throw new EOFException();
-        if (!header.equals(GDiffTextWriter.GDT)) {
-            throw new IOException("Unexpected header: " + header);
-        }
-        String line;
-        int lineCount = 0;
-        while ((line = br.readLine()) != null) {
-            lineCount++;
-            if (line.length() == 0)
-                throw new IOException("invalid empty line: " + lineCount);
-            char c = line.charAt(0);
-            if (c == GDiffTextWriter.COPY) {
-                int i = line.indexOf(GDiffTextWriter.COMMA);
-                if (i == -1)
-                    throw new IOException(", not found");
-                long offset = l(line.substring(1, i));
-                long length = l(line.substring(i + 1));
-                source.seek(offset);
-                copy(source, out, (int)length);
-            } else if (c == GDiffTextWriter.DATA) {
-                long dataSize = l(line.substring(1));
-                copy(br, out, (int)dataSize);
-                br.readLine();
-            } else {
-                throw new IOException("invalid patch command: " + lineCount);
-            }
-        }
-        out.flush();
-    }
-    
-    /**
-     * Copy.
-     *
-     * @param source the source
-     * @param out the out
-     * @param length the length
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    private void copy(Readable source, Writer out, int length) throws IOException {
-        while (length > 0) {
-            if (buf.limit() > length)
-                buf.limit(length);
-            int count = source.read(buf);
-            if (count == -1)
-                throw new IOException("EOF in chunk");
-            buf.flip();
-            out.append(buf);
-            length -= count;
-        }
-    }
+  /**
+   * Constructs a new TextPatcher with a generic source.
+   *
+   * @param source the source
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public TextPatcher(SeekableSource source) throws IOException {
+    if (source == null)
+      throw new NullPointerException("source");
+    this.source = source;
+  }
 
+  /**
+   * Constructs a new TextPatcher with a source to patch.
+   *
+   * @param source the source
+   */
+  public TextPatcher(CharSequence source) {
+    this.source = new CharBufferSeekableSource(source);
+  }
+
+  /**
+   * Patch from a string, return the result.
+   *
+   * @param patch the patch
+   * @return the string
+   */
+  public String patch(CharSequence patch) {
+    if (patch == null)
+      throw new NullPointerException("patch");
+    StringWriter sw = new StringWriter();
+    try {
+      patch(new StringReader(patch.toString()), sw);
+      return sw.toString();
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Invalid patch: " + e, e);
+    }
+  }
+
+  /**
+   * L.
+   *
+   * @param s the s
+   * @return the long
+   */
+  private long l(String s) {
+    return Long.parseLong(s, 16);
+  }
+
+  /**
+   * Patches a source to an output file.
+   *
+   * @param patch the patch
+   * @param out The output must be closed by the caller
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public void patch(Reader patch, Writer out) throws IOException {
+    if (patch == null)
+      throw new NullPointerException("patch");
+    if (out == null)
+      throw new NullPointerException("out");
+    BufferedReader br;
+    if (patch instanceof BufferedReader)
+      br = (BufferedReader) patch;
+    else
+      br = new BufferedReader(patch);
+    String header = br.readLine();
+    if (header == null)
+      throw new EOFException();
+    if (!header.equals(GDiffTextWriter.GDT)) {
+      throw new IOException("Unexpected header: " + header);
+    }
+    String line;
+    int lineCount = 0;
+    while ((line = br.readLine()) != null) {
+      lineCount++;
+      if (line.length() == 0)
+        throw new IOException("invalid empty line: " + lineCount);
+      char c = line.charAt(0);
+      if (c == GDiffTextWriter.COPY) {
+        int i = line.indexOf(GDiffTextWriter.COMMA);
+        if (i == -1)
+          throw new IOException(", not found");
+        long offset = l(line.substring(1, i));
+        long length = l(line.substring(i + 1));
+        source.seek(offset);
+        copy(source, out, (int) length);
+      } else if (c == GDiffTextWriter.DATA) {
+        long dataSize = l(line.substring(1));
+        copy(br, out, (int) dataSize);
+        br.readLine();
+      } else {
+        throw new IOException("invalid patch command: " + lineCount);
+      }
+    }
+    out.flush();
+  }
+
+  /**
+   * Copy.
+   *
+   * @param source the source
+   * @param out the out
+   * @param length the length
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  private void copy(Readable source, Writer out, int length) throws IOException {
+    while (length > 0) {
+      if (buf.limit() > length)
+        buf.limit(length);
+      int count = source.read(buf);
+      if (count == -1)
+        throw new IOException("EOF in chunk");
+      buf.flip();
+      out.append(buf);
+      length -= count;
+    }
+  }
 }
-

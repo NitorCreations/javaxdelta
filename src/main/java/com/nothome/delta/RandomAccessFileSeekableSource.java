@@ -24,7 +24,6 @@
  *
  *
  */
-
 package com.nothome.delta;
 
 import java.io.IOException;
@@ -35,70 +34,68 @@ import java.nio.ByteBuffer;
  * Wraps a random access file.
  */
 public class RandomAccessFileSeekableSource implements SeekableSource {
-    
-    /** The raf. */
-    private RandomAccessFile raf;
+  /** The raf. */
+  private RandomAccessFile raf;
 
-    /**
-     * Constructs a new RandomAccessFileSeekableSource.
-     *
-     * @param raf the raf
-     */
-    public RandomAccessFileSeekableSource(RandomAccessFile raf) {
-        if (raf == null)
-            throw new NullPointerException("raf");
-        this.raf = raf;
-    }
+  /**
+   * Constructs a new RandomAccessFileSeekableSource.
+   *
+   * @param raf the raf
+   */
+  public RandomAccessFileSeekableSource(RandomAccessFile raf) {
+    if (raf == null)
+      throw new NullPointerException("raf");
+    this.raf = raf;
+  }
 
-    /* (non-Javadoc)
-     * @see com.nothome.delta.SeekableSource#seek(long)
-     */
-    @Override
-	public void seek(long pos) throws IOException {
-        raf.seek(pos);
-    }
+  /* (non-Javadoc)
+   * @see com.nothome.delta.SeekableSource#seek(long)
+   */
+  @Override
+  public void seek(long pos) throws IOException {
+    raf.seek(pos);
+  }
 
-    /**
-     * Read.
-     *
-     * @param b the b
-     * @param off the off
-     * @param len the len
-     * @return the int
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public int read(byte[] b, int off, int len) throws IOException {
-        return raf.read(b, off, len);
-    }
+  /**
+   * Read.
+   *
+   * @param b the b
+   * @param off the off
+   * @param len the len
+   * @return the int
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public int read(byte[] b, int off, int len) throws IOException {
+    return raf.read(b, off, len);
+  }
 
-    /**
-     * Length.
-     *
-     * @return the long
-     * @throws IOException Signals that an I/O exception has occurred.
-     */
-    public long length() throws IOException {
-        return raf.length();
-    }
+  /**
+   * Length.
+   *
+   * @return the long
+   * @throws IOException Signals that an I/O exception has occurred.
+   */
+  public long length() throws IOException {
+    return raf.length();
+  }
 
-    /* (non-Javadoc)
-     * @see java.io.Closeable#close()
-     */
-    @Override
-	public void close() throws IOException {
-        raf.close();
-    }
+  /* (non-Javadoc)
+   * @see java.io.Closeable#close()
+   */
+  @Override
+  public void close() throws IOException {
+    raf.close();
+  }
 
-    /* (non-Javadoc)
-     * @see com.nothome.delta.SeekableSource#read(java.nio.ByteBuffer)
-     */
-    @Override
-	public int read(ByteBuffer bb) throws IOException {
-        int c = raf.read(bb.array(), bb.position(), bb.remaining());
-        if (c == -1)
-            return -1;
-        bb.position(bb.position() + c);
-        return c;
-    }
-    
+  /* (non-Javadoc)
+   * @see com.nothome.delta.SeekableSource#read(java.nio.ByteBuffer)
+   */
+  @Override
+  public int read(ByteBuffer bb) throws IOException {
+    int c = raf.read(bb.array(), bb.position(), bb.remaining());
+    if (c == -1)
+      return -1;
+    bb.position(bb.position() + c);
+    return c;
+  }
 }

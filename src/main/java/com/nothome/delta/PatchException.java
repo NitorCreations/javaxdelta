@@ -23,7 +23,6 @@
  * IN THE SOFTWARE.
  *
  */
-
 package com.nothome.delta;
 
 import java.io.IOException;
@@ -32,21 +31,19 @@ import java.io.IOException;
  * Thrown when a patch is invalid.
  */
 public class PatchException extends IOException {
-    
-    /** The Constant serialVersionUID. */
-    private static final long serialVersionUID = 1;
+  /** The Constant serialVersionUID. */
+  private static final long serialVersionUID = 1;
 
-    /**
-     * Creates a new instance of <code>PatchException</code> without detail message.
-     */
-    public PatchException() {
-    }
-    
-    /**
-     * Constructs an instance of <code>PatchException</code> with the specified detail message.
-     * @param msg the detail message.
-     */
-    public PatchException(String msg) {
-        super(msg);
-    }
+  /**
+   * Creates a new instance of <code>PatchException</code> without detail message.
+   */
+  public PatchException() {}
+
+  /**
+   * Constructs an instance of <code>PatchException</code> with the specified detail message.
+   * @param msg the detail message.
+   */
+  public PatchException(String msg) {
+    super(msg);
+  }
 }

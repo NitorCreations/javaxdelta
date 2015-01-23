@@ -12,10 +12,10 @@
  byte target[] = ...;
  Delta d = new Delta();
  byte patch[] = d.compute(source, target);
- 
+
  GDiffPatcher p = new GDiffPatcher();
  byte patchedSource[] = p.patch(source, patch);
- 
+
  assert java.util.Arrays.equals(target, patchedSource);
  </pre>
  *
