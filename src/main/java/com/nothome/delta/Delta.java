@@ -493,9 +493,9 @@ public class Delta {
       System.err.println("aborting..");
       return;
     }
-    DiffWriter output = null;
-    File sourceFile = null;
-    File targetFile = null;
+    DiffWriter output;
+    File sourceFile;
+    File targetFile;
     if (argv[0].equals("-d")) {
       sourceFile = new File(argv[1]);
       targetFile = new File(argv[2]);
@@ -508,8 +508,7 @@ public class Delta {
     if (sourceFile.length() > Integer.MAX_VALUE || targetFile.length() > Integer.MAX_VALUE) {
       System.err.println("source or target is too large, max length is " + Integer.MAX_VALUE);
       System.err.println("aborting..");
-      if (output != null)
-        output.close();
+      output.close();
       return;
     }
     Delta d = new Delta();
