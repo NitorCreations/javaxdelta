@@ -312,8 +312,8 @@ public class JarPatcher {
     if (outputName == null) {
       outputName = next;
     }
-    int ignoreSourcePaths = Integer.valueOf(System.getProperty("patcher.ignoreSourcePathElements", "0"));
-    int ignoreOutputPaths = Integer.valueOf(System.getProperty("patcher.ignoreOutputPathElements", "0"));
+    int ignoreSourcePaths = Integer.parseInt(System.getProperty("patcher.ignoreSourcePathElements", "0"));
+    int ignoreOutputPaths = Integer.parseInt(System.getProperty("patcher.ignoreOutputPathElements", "0"));
     Path sourcePath = Paths.get(sourceName);
     Path outputPath = Paths.get(outputName);
     if (ignoreOutputPaths >= outputPath.getNameCount()) {
