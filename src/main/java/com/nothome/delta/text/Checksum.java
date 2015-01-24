@@ -32,8 +32,6 @@ import java.util.HashMap;
  * Checksum that uses character streams.
  */
 public class Checksum {
-  /** The debug. */
-  public static boolean debug = false;
   /** The checksums. */
   protected HashMap<Long, Integer> checksums = new HashMap<Long, Integer>();
   /** The Constant single_hash. */
