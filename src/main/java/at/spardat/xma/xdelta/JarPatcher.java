@@ -240,7 +240,7 @@ public class JarPatcher {
    */
   private ZipArchiveEntry getPatchEntry(ZipFile source, String name, long crc) {
     for (ZipArchiveEntry next : source.getEntries(name)) {
-      long nextCrc = Long.valueOf(next.getComment());
+      long nextCrc = Long.parseLong(next.getComment());
       if (nextCrc == crc)
         return next;
     }
