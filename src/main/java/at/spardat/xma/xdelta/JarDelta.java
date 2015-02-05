@@ -111,7 +111,7 @@ public class JarDelta {
         ZipArchiveEntry targetEntry = enumer.nextElement();
         ZipArchiveEntry sourceEntry = findBestSource(source, target, targetEntry);
         String nextEntryName = prefix + targetEntry.getName();
-        if (sourceEntry != null && targetEntry != null && zipFilesPattern.matcher(sourceEntry.getName()).matches() && !equal(sourceEntry, targetEntry)) {
+        if (sourceEntry != null && zipFilesPattern.matcher(sourceEntry.getName()).matches() && !equal(sourceEntry, targetEntry)) {
           nextEntryName += "!";
         }
         nextEntryName += "|" + Long.toHexString(targetEntry.getCrc());

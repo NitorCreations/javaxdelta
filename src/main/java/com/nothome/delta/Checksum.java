@@ -32,8 +32,6 @@ import java.util.HashMap;
  * Checksum computation class.
  */
 public class Checksum {
-  /** The Constant debug. */
-  static final boolean debug = false;
   /** The checksums. */
   private HashMap<Long, Integer> checksums = new HashMap<Long, Integer>();
   /** The Constant single_hash. */

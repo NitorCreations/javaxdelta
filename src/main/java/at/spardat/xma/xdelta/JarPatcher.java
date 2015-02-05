@@ -56,10 +56,8 @@ public class JarPatcher {
   private final String patchName;
   /** The source name. */
   private final String sourceName;
-  /** The buffer len. */
-  private final int BUFFER_LEN = 8 * 1024;
   /** The buffer. */
-  private final byte[] buffer = new byte[BUFFER_LEN];
+  private final byte[] buffer = new byte[8 * 1024];
   /** The next. */
   private String next = null;
 
@@ -240,7 +238,7 @@ public class JarPatcher {
    */
   private ZipArchiveEntry getPatchEntry(ZipFile source, String name, long crc) {
     for (ZipArchiveEntry next : source.getEntries(name)) {
-      long nextCrc = Long.valueOf(next.getComment());
+      long nextCrc = Long.parseLong(next.getComment());
       if (nextCrc == crc)
         return next;
     }
@@ -312,8 +310,8 @@ public class JarPatcher {
     if (outputName == null) {
       outputName = next;
     }
-    int ignoreSourcePaths = Integer.valueOf(System.getProperty("patcher.ignoreSourcePathElements", "0"));
-    int ignoreOutputPaths = Integer.valueOf(System.getProperty("patcher.ignoreOutputPathElements", "0"));
+    int ignoreSourcePaths = Integer.parseInt(System.getProperty("patcher.ignoreSourcePathElements", "0"));
+    int ignoreOutputPaths = Integer.parseInt(System.getProperty("patcher.ignoreOutputPathElements", "0"));
     Path sourcePath = Paths.get(sourceName);
     Path outputPath = Paths.get(outputName);
     if (ignoreOutputPaths >= outputPath.getNameCount()) {
