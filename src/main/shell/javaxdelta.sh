@@ -14,34 +14,43 @@ if [ "$1" = "-d" ]; then
 fi
 if [ -z "$JXDELTA_HOME" ]; then
   JXDELTA_HOME=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd -P)
+  if [ "$JXDELTA_HOME" = "/usr/bin" ]; then
+    JXDELTA_HOME="$HOME/.javaxdelta"
+    JXDELTA_LIB="/var/lib/javaxdelta"
+  else
+    JXDELTA_LIB="$JXDELTA_HOME/lib"
+  fi
+else
+  JXDELTA_LIB="$JXDELTA_HOME/lib"
 fi
 
-
-mkdir -p $JXDELTA_HOME/lib
-if [ ! -d $JXDELTA_HOME/lib ]; then
-  echo "Failed to create javaxdelta lib directory"
-  exit 1
+if [ ! -d "$JXDELTA_LIB" ]; then
+  mkdir -p "$JXDELTA_LIB"
+  if [ ! -d "$JXDELTA_LIB" ]; then
+    echo "Failed to create javaxdelta lib directory"
+    exit 1
+  fi
 fi
 
-JXDELTA_JAR=$JXDELTA_HOME/lib/$MD5.jar
-flock "$JXDELTA_HOME/lib/" bash -c "if ! [ -r \"$JXDELTA_JAR\" ]; then tail -n+%%ARCHIVE_START%% \"${BASH_SOURCE[0]}\" > \"$JXDELTA_JAR\"; fi"
+JXDELTA_JAR="$JXDELTA_LIB/javaxdelta-uber-$MD5.jar"
+flock "$JXDELTA_LIB" bash -c "if ! [ -r \"$JXDELTA_JAR\" ]; then tail -n+%%ARCHIVE_START%% \"${BASH_SOURCE[0]}\" > \"$JXDELTA_JAR\"; fi"
 
 if [ -z "$JAVA_HOME" ]; then
   if ! which java > /dev/null; then
     echo "No java or java on PATH"
     exit 1
   else
-    JAVA=$(which java)
+    JAVA="$(which java)"
   fi
 else
-  JAVA=$JAVA_HOME/bin/java
+  JAVA="$JAVA_HOME/bin/java"
 fi
 
 export JXDELTA_HOME
 case $1 in
   delta)
   shift
-  exec $JAVA $DEBUG -cp $JXDELTA_JAR at.spardat.xma.xdelta.JarDelta "$@"
+  exec "$JAVA" $DEBUG -cp "$JXDELTA_JAR" at.spardat.xma.xdelta.JarDelta "$@"
   ;;
   patch)
   shift
@@ -57,7 +66,7 @@ case $1 in
       shift
     fi
   done
-  exec $JAVA $EXTRA_ARGS $DEBUG -cp $JXDELTA_JAR at.spardat.xma.xdelta.JarPatcher "$@"
+  exec "$JAVA" $EXTRA_ARGS $DEBUG -cp "$JXDELTA_JAR" at.spardat.xma.xdelta.JarPatcher "$@"
   ;;
   *)
   echo "usage:"
