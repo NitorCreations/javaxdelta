@@ -181,6 +181,9 @@ public class JarPatcher {
                 closeEntry(output, outputEntry, crc);
               } else { // unchanged Entry
                 ZipArchiveEntry outputEntry = new ZipArchiveEntry(sourceEntry);
+                if (JarDelta.zipFilesPattern.matcher(sourceEntry.getName()).matches()) {
+                    crc = sourceEntry.getCrc();
+                  }
                 output.putArchiveEntry(outputEntry);
                 try (InputStream in = source.getInputStream(sourceEntry)) {
                   int read = 0;
