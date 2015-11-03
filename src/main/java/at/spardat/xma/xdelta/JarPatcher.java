@@ -327,8 +327,12 @@ public class JarPatcher {
       StringBuilder b = new StringBuilder().append("Not enough path elements to ignore in source (").append(sourcePath).append(" in ").append(sourceName).append(")");
       throw new IOException(b.toString());
     }
-    sourcePath = sourcePath.subpath(ignoreSourcePaths, sourcePath.getNameCount());
-    outputPath = outputPath.subpath(ignoreOutputPaths, outputPath.getNameCount());
+    if (ignoreSourcePaths > 0) {
+      sourcePath = sourcePath.subpath(ignoreSourcePaths, sourcePath.getNameCount());
+    }
+    if (ignoreOutputPaths > 0) {
+      outputPath = outputPath.subpath(ignoreOutputPaths, outputPath.getNameCount());
+    }
     File sourceFile = sourcePath.toFile();
     File outputFile = outputPath.toFile();
     if (!(outputFile.getAbsoluteFile().getParentFile().mkdirs() || outputFile.getAbsoluteFile().getParentFile().exists())) {
